@@ -7,24 +7,25 @@ Last status: pending
 Last log: .agent-runs/2026-10-03/ECOM-001.log
 
 ## Files Changed
-- none from project implementation; previous run failed before the agent started work
+- none from ECOM-001 implementation; the agent did not start
 
 ## Tests Run
 not completed; planned: scripts/project-validate.sh structure
 
 ## Current Status
 ```text
-Ready to retry ECOM-001 after runner CLI flag compatibility fix.
+ M docs/night-runner/handoff.md
+ M docs/night-runner/task-queue.md
 ```
 
 ## Known Issues
-Previous run used an unsupported Codex CLI flag: `--ask-for-approval`.
+The previous command combined `--sandbox workspace-write` with `--approve-for-me`, which this Codex CLI rejects. The runner now uses `--approve-for-me` by itself; that option already enables the workspace-write sandbox.
 
 ## Next Task
 ECOM-001
 
 ## Exact Next Agent Prompt
-Run `scripts/night-agent-runner.sh --agent codex --dry-run` to regenerate the prompt preview.
+Generated automatically by the runner for ECOM-001.
 
 ## Protected Files Reminder
 
