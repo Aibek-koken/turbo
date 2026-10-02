@@ -85,6 +85,27 @@ if [ "$AGENT_KIND" = "claude" ] && [ "${AGENT_BIN}" = "${CODEX_BIN:-codex}" ]; t
   AGENT_BIN="${CLAUDE_BIN:-claude}"
 fi
 
+resolve_agent_bin() {
+  if command -v "$AGENT_BIN" >/dev/null 2>&1; then
+    AGENT_BIN="$(command -v "$AGENT_BIN")"
+    return 0
+  fi
+
+  if [ "$AGENT_KIND" = "codex" ] && [ "$AGENT_BIN" = "codex" ] && [ -d "$HOME/.vscode/extensions" ]; then
+    local candidate
+    while IFS= read -r candidate; do
+      if [ -x "$candidate" ]; then
+        AGENT_BIN="$candidate"
+        return 0
+      fi
+    done < <(find "$HOME/.vscode/extensions" -path '*/bin/*/codex' -type f 2>/dev/null | sort -r)
+  fi
+
+  return 1
+}
+
+resolve_agent_bin || true
+
 if [ "$DRY_RUN" -ne 1 ] && ! command -v "$AGENT_BIN" >/dev/null 2>&1; then
   echo "Agent CLI not found: $AGENT_BIN" >&2
   exit 2
@@ -351,7 +372,7 @@ run_agent() {
   fi
 }
 
-if git_available && [ "$ALLOW_DIRTY" -ne 1 ] && [ -n "$(git status --porcelain)" ]; then
+if [ "$DRY_RUN" -ne 1 ] && git_available && [ "$ALLOW_DIRTY" -ne 1 ] && [ -n "$(git status --porcelain)" ]; then
   echo "Refusing to start with dirty Git changes. Commit/stash or use --allow-dirty." >&2
   git status --short >&2
   exit 2

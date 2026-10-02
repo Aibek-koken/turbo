@@ -50,6 +50,13 @@ if command -v docker >/dev/null 2>&1; then
 else
   echo "Docker: missing"
 fi
+if command -v codex >/dev/null 2>&1; then
+  echo "Codex CLI: $(command -v codex)"
+else
+  codex_from_vscode="$(find "$HOME/.vscode/extensions" -path '*/bin/*/codex' -type f 2>/dev/null | sort -r | head -n 1 || true)"
+  [ -n "$codex_from_vscode" ] && echo "Codex CLI: $codex_from_vscode"
+  [ -z "$codex_from_vscode" ] && echo "Codex CLI: missing"
+fi
 
 echo
 echo "== Last run log =="
