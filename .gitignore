@@ -1,0 +1,9 @@
+.DS_Store
+.agent-runs/
+target/
+**/target/
+.env
+.env.*
+!.env.example
+LiveAssist-download/
+
