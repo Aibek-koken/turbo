@@ -1,50 +1,37 @@
 # Night Agent Handoff
 
 Requested phases: sprint1,sprint2
-Current task: none
+Current task: ECOM-001
 Last completed task: none
-Last status: not started
-Last log: none
+Last status: pending
+Last log: .agent-runs/2026-10-03/ECOM-001.log
 
 ## Files Changed
-
-- none
+- none from project implementation; previous run failed before the agent started work
 
 ## Tests Run
-
-None yet.
+not completed; planned: scripts/project-validate.sh structure
 
 ## Current Status
-
-The night runner has been prepared. No e-commerce implementation task has run.
+```text
+Ready to retry ECOM-001 after runner CLI flag compatibility fix.
+```
 
 ## Known Issues
-
-- Local Java appears to be Java 17. The target project requires Java 21.
-- The repository is not currently a Git repository, so the runner will use a
-  checksum snapshot fallback for changed-file detection.
+Previous run used an unsupported Codex CLI flag: `--ask-for-approval`.
 
 ## Next Task
-
 ECOM-001
 
 ## Exact Next Agent Prompt
-
-Generate with:
-
-```bash
-scripts/night-agent-prompt-builder.sh ECOM-001
-```
+Run `scripts/night-agent-runner.sh --agent codex --dry-run` to regenerate the prompt preview.
 
 ## Protected Files Reminder
 
-- Do not edit `ECommerce_Microservices_Architecture_Package_v0.1.pdf`.
-- Do not edit `ECommerce_User_Stories_6_Sprints.xlsx`.
-- Do not edit `LiveAssist-download/`.
+- Do not edit the source PDF/XLSX.
+- Do not edit LiveAssist-download/.
 - Do not commit or push from inside the agent session.
 
 ## Recovery Notes
 
-Inspect changes with Git if the repository is initialized. Otherwise inspect the
-changed files listed by the runner logs under `.agent-runs/`.
-
+Review the log and changed files. If not using Git, initialize Git before a long retry when possible.

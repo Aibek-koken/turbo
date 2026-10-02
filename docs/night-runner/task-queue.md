@@ -269,4 +269,3 @@ Allowed files:
 Validation:
 - `scripts/project-validate.sh catalog-validate`
 <!-- /task -->
-

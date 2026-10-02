@@ -366,7 +366,7 @@ run_agent() {
   local prompt_file="$1"
   local log_file="$2"
   if [ "$AGENT_KIND" = "codex" ]; then
-    "$AGENT_BIN" exec -C "$PWD" --skip-git-repo-check --sandbox workspace-write --ask-for-approval never - < "$prompt_file" > "$log_file" 2>&1
+    "$AGENT_BIN" exec -C "$PWD" --skip-git-repo-check --sandbox workspace-write --approve-for-me - < "$prompt_file" > "$log_file" 2>&1
   else
     "$AGENT_BIN" --print --permission-mode acceptEdits < "$prompt_file" > "$log_file" 2>&1
   fi
@@ -412,7 +412,7 @@ while [ "$completed" -lt "$MAX_TASKS" ]; do
     echo "Prompt: $prompt_file"
     echo "Agent command:"
     if [ "$AGENT_KIND" = "codex" ]; then
-      echo "$AGENT_BIN exec -C \"$PWD\" --skip-git-repo-check --sandbox workspace-write --ask-for-approval never - < $prompt_file"
+      echo "$AGENT_BIN exec -C \"$PWD\" --skip-git-repo-check --sandbox workspace-write --approve-for-me - < $prompt_file"
     else
       echo "$AGENT_BIN --print --permission-mode acceptEdits < $prompt_file"
     fi
