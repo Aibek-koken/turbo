@@ -1,79 +1,40 @@
 # Night Agent Handoff
 
-Requested phases: sprint1,sprint2
-Current task: ECOM-009
+Requested phases: sprint2
+Current task: ECOM-010
 Last completed task: ECOM-009
-Last status: done
+Last status: pending
 Last log: .agent-runs/2026-10-03/ECOM-009.log
 
 ## Files Changed
-- services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/CatalogApiException.java
-- services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/customer/CatalogBrowseController.java
-- services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/customer/CatalogBrowseDtos.java
-- services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service/CatalogBrowseService.java
-- services/catalog-service/src/test/java/com/kora/ecommerce/catalog/api/customer/CatalogBrowseControllerTest.java
+- AGENTS.md
+- STATE.md
+- docs/night-runner/handoff.md
+- docs/night-runner/sprint2-context-pack.md
+- docs/night-runner/task-queue.md
+- scripts/night-agent-prompt-builder.sh
+- scripts/night-agent-runner.sh
+- scripts/night-agent-safe-approve.sh
+- scripts/project-validate.sh
+- services/catalog-service/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker
 
 ## Tests Run
-scripts/project-validate.sh catalog-validate
+- `bash -n` for all runner/validation scripts (passed)
+- prompt generation for ECOM-010 through ECOM-015 (passed)
+- Sprint 2 dry-run selecting ECOM-010 (passed)
+- `scripts/project-validate.sh catalog-test` on Java 21 (passed)
 
 ## Current Status
-```text
- M AGENTS.md
- M README.md
- M STATE.md
- M docs/night-runner/handoff.md
- M docs/night-runner/task-queue.md
- M pom.xml
- M services/audit-notification-service/pom.xml
- M services/audit-notification-service/src/main/resources/application.yml
- M services/catalog-service/pom.xml
- M services/catalog-service/src/main/resources/application.yml
- M services/gateway-service/pom.xml
- M services/gateway-service/src/main/resources/application.yml
- M services/order-service/pom.xml
- M services/order-service/src/main/resources/application.yml
- M services/payment-service/pom.xml
- M services/payment-service/src/main/resources/application.yml
-?? .env.example
-?? docker-compose.yml
-?? docs/keycloak-local.md
-?? docs/observability-runbook.md
-?? docs/service-rbac.md
-?? infra/
-?? libs/
-?? services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification/api/
-?? services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification/observability/
-?? services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification/security/
-?? services/audit-notification-service/src/test/
-?? services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/
-?? services/catalog-service/src/main/java/com/kora/ecommerce/catalog/domain/
-?? services/catalog-service/src/main/java/com/kora/ecommerce/catalog/observability/
-?? services/catalog-service/src/main/java/com/kora/ecommerce/catalog/repository/
-?? services/catalog-service/src/main/java/com/kora/ecommerce/catalog/security/
-?? services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service/
-?? services/catalog-service/src/main/resources/db/
-?? services/catalog-service/src/test/
-?? services/gateway-service/src/main/java/com/kora/ecommerce/gateway/observability/
-?? services/gateway-service/src/main/java/com/kora/ecommerce/gateway/security/
-?? services/gateway-service/src/test/
-?? services/order-service/src/main/java/com/kora/ecommerce/order/api/
-?? services/order-service/src/main/java/com/kora/ecommerce/order/observability/
-?? services/order-service/src/main/java/com/kora/ecommerce/order/security/
-?? services/order-service/src/test/
-?? services/payment-service/src/main/java/com/kora/ecommerce/payment/api/
-?? services/payment-service/src/main/java/com/kora/ecommerce/payment/observability/
-?? services/payment-service/src/main/java/com/kora/ecommerce/payment/security/
-?? services/payment-service/src/test/
-```
+Sprint 2 queue extension is validated and ready to commit before the overnight run.
 
 ## Known Issues
 none
 
 ## Next Task
-none
+ECOM-010
 
 ## Exact Next Agent Prompt
-No pending task.
+Generated automatically by the runner for ECOM-010.
 
 ## Protected Files Reminder
 
@@ -83,4 +44,4 @@ No pending task.
 
 ## Recovery Notes
 
-Review the log and changed files. If not using Git, initialize Git before a long retry when possible.
+Commit the queue and runner changes before starting. The runner will execute only pending Sprint 2 tasks when launched with `--overnight --phase sprint2`.

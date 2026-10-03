@@ -9,10 +9,10 @@ This queue is consumed by `scripts/night-agent-runner.sh`.
 Primary target:
 
 - Sprint 1 complete.
-- First part of Sprint 2: US-06, US-07 and US-08.
+- Complete Sprint 2: US-06 through US-10.
 
-Do not continue into Redis, Spring Batch, Order, Payment, Audit, Notification or
-CI unless the queue is explicitly extended.
+Do not continue into Order, Payment, Audit, Notification or CI unless the queue
+is explicitly extended.
 
 ## Shared Rules
 
@@ -268,4 +268,171 @@ Allowed files:
 
 Validation:
 - `scripts/project-validate.sh catalog-validate`
+<!-- /task -->
+
+<!-- task:id=ECOM-010 phase=sprint2 status=pending -->
+## ECOM-010: Add Redis and Redisson catalog cache foundation
+
+Status: pending
+
+Story coverage:
+- US-09 Redis Cache-Aside & Stampede Protection
+
+Scope:
+- Add Spring Data Redis and Redisson dependencies to Catalog Service.
+- Add environment-driven Redis connection, cache TTL, lock wait and lease settings.
+- Introduce a focused cache abstraction for customer product-detail responses.
+- Use stable, namespaced product-detail keys and JSON serialization that is safe across restarts.
+- Keep database reads functional when caching is disabled for tests or local troubleshooting.
+- Add focused tests for configuration, key generation and cache value round-tripping.
+
+Allowed files:
+- `services/catalog-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh catalog-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-011 phase=sprint2 status=pending -->
+## ECOM-011: Implement product-detail cache-aside and invalidation
+
+Status: pending
+
+Story coverage:
+- US-09 Redis Cache-Aside & Stampede Protection
+
+Scope:
+- Apply cache-aside behavior to customer product-detail reads.
+- On a miss, load the authoritative active product from PostgreSQL and populate Redis with TTL.
+- On a hit, return the cached response without querying the product repository.
+- Evict the affected product cache after product or attribute create/update/deactivate operations.
+- Invalidate all affected product entries after category update/deactivation using a bounded strategy.
+- Never serve inactive products or stale admin changes from cache.
+- Add tests for hit, miss, TTL write and each relevant invalidation path.
+
+Allowed files:
+- `services/catalog-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh catalog-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-012 phase=sprint2 status=pending -->
+## ECOM-012: Add Redisson stampede protection
+
+Status: pending
+
+Story coverage:
+- US-09 Redis Cache-Aside & Stampede Protection
+
+Scope:
+- Protect concurrent product-detail cache misses with a per-product Redisson `RLock`.
+- Re-check Redis after acquiring the lock before loading from PostgreSQL.
+- Bound lock wait and lease times through configuration.
+- Release only locks owned by the current thread and handle timeout/interruption cleanly.
+- Preserve a clear failure path when Redis or locking is unavailable; do not silently cache bad data.
+- Add a deterministic concurrency test proving concurrent misses perform one database load.
+
+Allowed files:
+- `services/catalog-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh catalog-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-013 phase=sprint2 status=pending -->
+## ECOM-013: Add Spring Batch supplier import foundation
+
+Status: pending
+
+Story coverage:
+- US-10 Supplier CSV Bulk Import
+
+Scope:
+- Add Spring Batch dependencies and Catalog Service batch configuration.
+- Define and document the supplier CSV contract with SKU, product, category, price, currency, status and attribute fields.
+- Add a restartable supplier import job and chunk-oriented step with environment-driven chunk size.
+- Keep job metadata in the Catalog PostgreSQL database and avoid in-memory production metadata.
+- Add a small non-production sample CSV for tests/documentation only.
+- Add tests that the job and step are registered and a valid CSV is processed in chunks.
+
+Allowed files:
+- `services/catalog-service/**`
+- `pom.xml`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh catalog-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-014 phase=sprint2 status=pending -->
+## ECOM-014: Implement supplier row validation, upsert and error reporting
+
+Status: pending
+
+Story coverage:
+- US-10 Supplier CSV Bulk Import
+
+Scope:
+- Validate required fields, UUID-independent business keys, status, currency and non-negative price.
+- Upsert categories and products by stable slug/SKU rules without duplicating existing records.
+- Process valid records transactionally in bounded chunks.
+- Skip invalid rows without aborting the complete import and produce a deterministic error report with row number and reason.
+- Evict product-detail cache entries for products changed by the import.
+- Add tests for mixed valid/invalid files, updates, duplicate SKUs and error-report contents.
+
+Allowed files:
+- `services/catalog-service/**`
+- `pom.xml`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh catalog-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-015 phase=sprint2 status=pending -->
+## ECOM-015: Add protected import control and restartability
+
+Status: pending
+
+Story coverage:
+- US-10 Supplier CSV Bulk Import
+
+Scope:
+- Add `CATALOG_ADMIN` endpoints to launch an import from an allowed local import path and inspect job status/results.
+- Reject path traversal and unsupported file types; never accept arbitrary command execution or remote URLs.
+- Prevent accidental concurrent execution of the same supplier file.
+- Make restart after a failed chunk resume safely without duplicating already committed records.
+- Return processed, skipped and failed counts plus the error-report location without exposing secrets or host internals.
+- Add tests for authorization, path validation, duplicate launch, failure/restart and idempotent final data.
+- Document the local import and restart workflow.
+
+Allowed files:
+- `services/catalog-service/**`
+- `pom.xml`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh catalog-test`
 <!-- /task -->

@@ -49,7 +49,7 @@ task_block() {
 task_phase() {
   case "$1" in
     ECOM-001|ECOM-002|ECOM-003|ECOM-004|ECOM-005|ECOM-006) echo "sprint1" ;;
-    ECOM-007|ECOM-008|ECOM-009) echo "sprint2" ;;
+    ECOM-007|ECOM-008|ECOM-009|ECOM-010|ECOM-011|ECOM-012|ECOM-013|ECOM-014|ECOM-015) echo "sprint2" ;;
     *) echo "unknown"; return 1 ;;
   esac
 }
@@ -103,6 +103,56 @@ EOF
       cat <<'EOF'
 services/catalog-service
 docs/night-runner/sprint2-context-pack.md
+EOF
+      ;;
+    ECOM-010)
+      cat <<'EOF'
+services/catalog-service/pom.xml
+services/catalog-service/src/main/resources/application.yml
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service/CatalogBrowseService.java
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/customer/CatalogBrowseDtos.java
+docker-compose.yml
+.env.example
+EOF
+      ;;
+    ECOM-011)
+      cat <<'EOF'
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service/CatalogBrowseService.java
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service/CatalogAdminService.java
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/admin/CatalogAdminController.java
+services/catalog-service/src/test
+EOF
+      ;;
+    ECOM-012)
+      cat <<'EOF'
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/cache
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service/CatalogBrowseService.java
+services/catalog-service/src/main/resources/application.yml
+services/catalog-service/src/test
+EOF
+      ;;
+    ECOM-013)
+      cat <<'EOF'
+services/catalog-service/pom.xml
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/domain
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/repository
+services/catalog-service/src/main/resources/db/migration
+EOF
+      ;;
+    ECOM-014)
+      cat <<'EOF'
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/batch
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/domain
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/repository
+services/catalog-service/src/test
+EOF
+      ;;
+    ECOM-015)
+      cat <<'EOF'
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/batch
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/admin
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/security/CatalogSecurityConfiguration.java
+services/catalog-service/src/test
 EOF
       ;;
   esac
@@ -191,4 +241,3 @@ Low-token/context-limit rule:
 Safety rule:
 - Prefer asking for no user input overnight. If something is unsafe, mark blocked instead of guessing.
 EOF
-

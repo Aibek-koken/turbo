@@ -4,7 +4,9 @@ Last updated: 2026-10-03
 
 ## Current Status
 
-ECOM-009 is complete. The repository now has a Java 21 / Spring Boot 3.x Maven
+ECOM-009 is complete. Sprint 2 planning is now extended through US-10, with
+ECOM-010 through ECOM-015 queued for Redis/Redisson caching and Spring Batch
+supplier import. The repository has a Java 21 / Spring Boot 3.x Maven
 monorepo scaffold, a local Docker Compose infrastructure baseline, an
 importable Keycloak realm for local gateway/API testing, secure gateway
 routing, service-level RBAC for the first downstream service boundaries and a
@@ -108,14 +110,13 @@ that lets Flyway and Hibernate schema validation agree on table metadata.
 
 Night run target:
 
-1. Sprint 1 completely.
-2. The first practical slice of Sprint 2: catalog schema, admin API and customer
-   browse/detail API.
+1. Sprint 1 complete.
+2. Sprint 2 US-06 through US-08 complete.
+3. Complete Sprint 2 with US-09 Redis/Redisson and US-10 Spring Batch supplier
+   import through ECOM-010 to ECOM-015.
 
-Excluded from this first night unless explicitly added later:
+Excluded from this Sprint 2 run:
 
-- Redis/Redisson cache stampede implementation.
-- Spring Batch supplier import.
 - Order, payment, audit, notification and E2E flows.
 - CI release pipeline.
 
@@ -147,13 +148,21 @@ Running plain `mvn -q -pl services/catalog-service -am test` without setting
 `JAVA_HOME` still picks up Java 17 and fails with `release version 21 not
 supported`.
 
-## Next Command
-
-The first-night queued scope is complete. Do not start Redis, Spring Batch or
-later service work unless the task queue is extended in a new agent session.
+The runner and `scripts/project-validate.sh` now select the installed Java 21
+even when the parent shell exports a Java 17 `JAVA_HOME`. The Sprint 2 planning
+baseline passed the full Catalog Service tests:
 
 ```bash
-scripts/night-agent-runner.sh --agent codex --overnight --max-minutes 28800
+scripts/project-validate.sh catalog-test
 ```
 
-Next task: none currently queued.
+## Next Command
+
+The remaining Sprint 2 queue starts at ECOM-010. Commit the planning changes,
+then run only the Sprint 2 phase overnight.
+
+```bash
+caffeinate -dimsu scripts/night-agent-runner.sh --agent codex --overnight --phase sprint2 --max-minutes 28800
+```
+
+Next task: ECOM-010.

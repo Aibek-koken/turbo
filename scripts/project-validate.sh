@@ -3,7 +3,7 @@ set -euo pipefail
 
 MODE="${1:-structure}"
 
-if [ -z "${JAVA_HOME:-}" ] && command -v /usr/libexec/java_home >/dev/null 2>&1; then
+if command -v /usr/libexec/java_home >/dev/null 2>&1; then
   if JAVA21_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null)"; then
     export JAVA_HOME="$JAVA21_HOME"
     export PATH="$JAVA_HOME/bin:$PATH"
@@ -97,6 +97,11 @@ case "$MODE" in
     need_file pom.xml
     need_dir services/catalog-service
     mvn_cmd -q -pl services/catalog-service -am -DskipTests validate
+    ;;
+  catalog-test)
+    need_file pom.xml
+    need_dir services/catalog-service
+    mvn_cmd -q -pl services/catalog-service -am test
     ;;
   *)
     echo "Unknown validation mode: $MODE" >&2

@@ -110,10 +110,20 @@ README.md
 STATE.md
 EOF
       ;;
-    ECOM-007|ECOM-008|ECOM-009)
+    ECOM-007|ECOM-008|ECOM-009|ECOM-013|ECOM-014|ECOM-015)
       cat <<'EOF'
 services/catalog-service/**
 pom.xml
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-010|ECOM-011|ECOM-012)
+      cat <<'EOF'
+services/catalog-service/**
+pom.xml
+.env.example
 docs/**
 README.md
 STATE.md

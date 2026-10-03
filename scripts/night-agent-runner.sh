@@ -17,7 +17,7 @@ PHASE_FILTERS=""
 LIMIT_WAIT_BUFFER_SECONDS=90
 LIMIT_FALLBACK_SLEEP_SECONDS=900
 
-if [ -z "${JAVA_HOME:-}" ] && command -v /usr/libexec/java_home >/dev/null 2>&1; then
+if command -v /usr/libexec/java_home >/dev/null 2>&1; then
   if JAVA21_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null)"; then
     export JAVA_HOME="$JAVA21_HOME"
     export PATH="$JAVA_HOME/bin:$PATH"
@@ -119,7 +119,7 @@ fi
 task_phase() {
   case "$1" in
     ECOM-001|ECOM-002|ECOM-003|ECOM-004|ECOM-005|ECOM-006) echo "sprint1" ;;
-    ECOM-007|ECOM-008|ECOM-009) echo "sprint2" ;;
+    ECOM-007|ECOM-008|ECOM-009|ECOM-010|ECOM-011|ECOM-012|ECOM-013|ECOM-014|ECOM-015) echo "sprint2" ;;
     *) echo "unknown" ;;
   esac
 }
