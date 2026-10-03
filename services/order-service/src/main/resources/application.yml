@@ -1,6 +1,12 @@
 spring:
   application:
     name: order-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ECOMMERCE_SECURITY_ISSUER_URI:http://localhost:8085/realms/ecommerce}
+          jwk-set-uri: ${ECOMMERCE_SECURITY_JWK_SET_URI:http://localhost:8085/realms/ecommerce/protocol/openid-connect/certs}
 
 server:
   port: 8082
@@ -14,6 +20,18 @@ management:
     health:
       probes:
         enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
   tracing:
+    propagation:
+      type: w3c
     sampling:
-      probability: 1.0
+      probability: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:1.0}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+
+logging:
+  pattern:
+    level: '%5p [${spring.application.name},trace=%X{traceId:-},span=%X{spanId:-},correlation=%X{correlationId:-}]'

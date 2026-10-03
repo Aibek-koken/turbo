@@ -19,6 +19,7 @@
     <description>Java 21 Spring Boot monorepo for an e-commerce microservices portfolio.</description>
 
     <modules>
+        <module>libs/security-support</module>
         <module>services/gateway-service</module>
         <module>services/catalog-service</module>
         <module>services/order-service</module>

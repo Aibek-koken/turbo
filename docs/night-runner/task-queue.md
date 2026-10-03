@@ -55,10 +55,10 @@ Validation:
 - `scripts/project-validate.sh structure`
 <!-- /task -->
 
-<!-- task:id=ECOM-002 phase=sprint1 status=pending -->
+<!-- task:id=ECOM-002 phase=sprint1 status=done -->
 ## ECOM-002: Add local infrastructure Docker Compose baseline
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-01 Service Skeleton & Docker Compose
@@ -83,10 +83,10 @@ Validation:
 - `scripts/project-validate.sh compose-config`
 <!-- /task -->
 
-<!-- task:id=ECOM-003 phase=sprint1 status=pending -->
+<!-- task:id=ECOM-003 phase=sprint1 status=done -->
 ## ECOM-003: Configure Keycloak realm, clients and roles
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-02 Keycloak Realm, Clients & Roles
@@ -110,10 +110,10 @@ Validation:
 - `scripts/project-validate.sh keycloak-config`
 <!-- /task -->
 
-<!-- task:id=ECOM-004 phase=sprint1 status=pending -->
+<!-- task:id=ECOM-004 phase=sprint1 status=done -->
 ## ECOM-004: Implement secure API Gateway routing
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-03 Secure API Gateway Routing
@@ -136,10 +136,10 @@ Validation:
 - `scripts/project-validate.sh maven-validate`
 <!-- /task -->
 
-<!-- task:id=ECOM-005 phase=sprint1 status=pending -->
+<!-- task:id=ECOM-005 phase=sprint1 status=done -->
 ## ECOM-005: Add service-level RBAC baseline
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-04 Service-Level RBAC
@@ -165,10 +165,10 @@ Validation:
 - `scripts/project-validate.sh maven-validate`
 <!-- /task -->
 
-<!-- task:id=ECOM-006 phase=sprint1 status=pending -->
+<!-- task:id=ECOM-006 phase=sprint1 status=done -->
 ## ECOM-006: Add observability baseline across services
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-05 Observability Baseline
@@ -193,10 +193,10 @@ Validation:
 - `scripts/project-validate.sh maven-validate`
 <!-- /task -->
 
-<!-- task:id=ECOM-007 phase=sprint2 status=pending -->
+<!-- task:id=ECOM-007 phase=sprint2 status=done -->
 ## ECOM-007: Implement Catalog data model and Flyway migrations
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-06 Catalog Data Model & Flyway
@@ -218,10 +218,10 @@ Validation:
 - `scripts/project-validate.sh catalog-validate`
 <!-- /task -->
 
-<!-- task:id=ECOM-008 phase=sprint2 status=pending -->
+<!-- task:id=ECOM-008 phase=sprint2 status=done -->
 ## ECOM-008: Implement Catalog admin management API
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-07 Product & Category Management API
@@ -244,10 +244,10 @@ Validation:
 - `scripts/project-validate.sh catalog-validate`
 <!-- /task -->
 
-<!-- task:id=ECOM-009 phase=sprint2 status=pending -->
+<!-- task:id=ECOM-009 phase=sprint2 status=done -->
 ## ECOM-009: Implement Catalog customer browse and detail API
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-08 Product Browse, Filter & Details

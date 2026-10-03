@@ -1,0 +1,45 @@
+package com.kora.ecommerce.payment.security;
+
+import static com.kora.ecommerce.security.SecurityRoles.CUSTOMER;
+import static com.kora.ecommerce.security.SecurityRoles.OPS_ADMIN;
+
+import com.kora.ecommerce.security.EcommerceJwtAuthenticationConverters;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class PaymentSecurityConfiguration {
+
+    @Bean
+    SecurityFilterChain paymentSecurityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/health/**",
+                                "/actuator/info",
+                                "/actuator/prometheus")
+                        .permitAll()
+                        .requestMatchers("/api/payments/customer/**")
+                        .hasAnyRole(CUSTOMER, OPS_ADMIN)
+                        .requestMatchers("/api/payments/ops/**")
+                        .hasRole(OPS_ADMIN)
+                        .anyRequest()
+                        .denyAll())
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(
+                                EcommerceJwtAuthenticationConverters.keycloakRealmRoles())))
+                .build();
+    }
+}
