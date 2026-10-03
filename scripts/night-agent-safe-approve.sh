@@ -135,19 +135,15 @@ matches_pattern() {
   local file="$1"
   local pattern="$2"
   pattern="${pattern#./}"
-  case "$pattern" in
-    **/*)
-      local suffix="${pattern#**/}"
-      case "$file" in *"/$suffix"|"$suffix") return 0 ;; esac
-      ;;
-    */**)
-      local prefix="${pattern%/**}"
-      case "$file" in "$prefix"|"$prefix"/*) return 0 ;; esac
-      ;;
-    *)
-      case "$file" in $pattern) return 0 ;; esac
-      ;;
-  esac
+  if [[ "$pattern" == "**/"* ]]; then
+    local suffix="${pattern#\*\*/}"
+    case "$file" in *"/$suffix"|"$suffix") return 0 ;; esac
+  elif [[ "$pattern" == *"/**" ]]; then
+    local prefix="${pattern%/\*\*}"
+    case "$file" in "$prefix"|"$prefix"/*) return 0 ;; esac
+  else
+    case "$file" in $pattern) return 0 ;; esac
+  fi
   return 1
 }
 
@@ -210,10 +206,7 @@ exec
 -C
 .
 --skip-git-repo-check
---sandbox
-workspace-write
---ask-for-approval
-never
+--approve-for-me
 -
 EOF
       ;;
@@ -318,4 +311,3 @@ main() {
 }
 
 main "$@"
-

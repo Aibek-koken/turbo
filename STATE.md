@@ -1,12 +1,21 @@
 # Project State
 
-Last updated: 2026-10-02
+Last updated: 2026-10-03
 
 ## Current Status
 
-The repository currently contains source planning documents and a reference
-runner from another project. The e-commerce source code has not been scaffolded
-yet.
+ECOM-001 is complete. The repository now has a Java 21 / Spring Boot 3.x Maven
+monorepo scaffold with five independent service modules:
+
+- `services/gateway-service`
+- `services/catalog-service`
+- `services/order-service`
+- `services/payment-service`
+- `services/audit-notification-service`
+
+Each service has its own Maven module, Spring Boot application class and
+actuator-ready `application.yml`. No shared business domain or shared database
+model was introduced.
 
 Prepared by this setup:
 
@@ -15,6 +24,8 @@ Prepared by this setup:
 - Night runner queue: `docs/night-runner/task-queue.md`
 - Night runner handoff: `docs/night-runner/handoff.md`
 - Night runner scripts under `scripts/`
+- Root Maven parent: `pom.xml`
+- Developer setup notes: `README.md` and `docs/developer-setup.md`
 
 ## Active Delivery Target
 
@@ -39,18 +50,23 @@ Excluded from this first night unless explicitly added later:
 - The runner does not require a Git repository, but Git is recommended before
   long overnight work because it improves rollback and changed-file tracking.
 
-## Next Command
+## Latest Validation
 
-Check the queue and dry-run the first task:
+ECOM-001 validation passed:
 
 ```bash
-scripts/night-agent-status.sh
-scripts/night-agent-runner.sh --agent codex --dry-run
+scripts/project-validate.sh structure
 ```
 
-Start overnight work after reviewing the dry-run:
+Maven compile/validate was not required for ECOM-001. Keep using Java 21 for
+future Maven compile/test validation.
+
+## Next Command
+
+Continue with the next queued task only in a new agent session:
 
 ```bash
 scripts/night-agent-runner.sh --agent codex --overnight --max-minutes 28800
 ```
 
+Next task: ECOM-002.

@@ -1,9 +1,27 @@
 .DS_Store
+Thumbs.db
+
+# Night runner output
 .agent-runs/
+
+# Maven / Java build output
 target/
 **/target/
+*.class
+*.log
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Local environment files
 .env
 .env.*
 !.env.example
-LiveAssist-download/
 
+# Reference material that is not part of this project implementation
+LiveAssist-download/

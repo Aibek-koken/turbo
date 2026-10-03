@@ -24,10 +24,10 @@ CI unless the queue is explicitly extended.
 - Keep Java 21 as the target even if the local Java version is lower.
 - Use compact context docs first. Do not repeatedly read the PDF/XLSX.
 
-<!-- task:id=ECOM-001 phase=sprint1 status=pending -->
+<!-- task:id=ECOM-001 phase=sprint1 status=done -->
 ## ECOM-001: Scaffold the Java 21 Spring Boot monorepo
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-01 Service Skeleton & Docker Compose
