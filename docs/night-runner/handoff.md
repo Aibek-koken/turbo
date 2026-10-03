@@ -1,60 +1,39 @@
 # Night Agent Handoff
 
-Requested phases: sprint2
-Current task: ECOM-015
+Requested phases: sprint3
+Current task: queue preparation
 Last completed task: ECOM-015
-Last status: done
-Last log: .agent-runs/2026-10-03/ECOM-015.log
+Last status: ready
+Last log: none; Sprint 3 has not started
 
 ## Files Changed
-- services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/admin/CatalogAdminController.java
-- services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/admin/CatalogAdminDtos.java
-- services/catalog-service/src/main/java/com/kora/ecommerce/catalog/batch/SupplierImportControlService.java
-- services/catalog-service/src/main/java/com/kora/ecommerce/catalog/batch/SupplierImportExecutionSummary.java
-- services/catalog-service/src/test/java/com/kora/ecommerce/catalog/batch/SupplierImportControlServiceTest.java
+- Sprint 3 context pack and ECOM-016 through ECOM-022 queue entries
+- Runner phase, prompt dependency and file-scope mappings
+- Order Service and Debezium validation modes
+- Order Service Mockito configuration for this machine's Java 21 runtime
+- Project state and design delivery order
 
 ## Tests Run
-scripts/project-validate.sh catalog-test
+Runner syntax, all seven prompt builds, allowed-file scopes and Sprint 3 dry
+run passed. `scripts/project-validate.sh order-test` passed on Java 21 after
+selecting Mockito's subclass mock maker for this runtime.
 
 ## Current Status
-```text
- M .env.example
- M AGENTS.md
- M README.md
- M STATE.md
- M docs/night-runner/handoff.md
- M docs/night-runner/task-queue.md
- M pom.xml
- M services/catalog-service/pom.xml
- M services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/admin/CatalogAdminController.java
- M services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/admin/CatalogAdminDtos.java
- M services/catalog-service/src/main/java/com/kora/ecommerce/catalog/repository/ProductRepository.java
- M services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service/CatalogAdminService.java
- M services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service/CatalogBrowseService.java
- M services/catalog-service/src/main/resources/application.yml
- M services/catalog-service/src/test/java/com/kora/ecommerce/catalog/api/admin/CatalogAdminControllerTest.java
- M services/catalog-service/src/test/java/com/kora/ecommerce/catalog/api/customer/CatalogBrowseControllerTest.java
- M services/catalog-service/src/test/java/com/kora/ecommerce/catalog/repository/CatalogMigrationTest.java
- M services/catalog-service/src/test/java/com/kora/ecommerce/catalog/security/CatalogSecurityConfigurationTest.java
-?? docs/catalog/
-?? services/catalog-service/src/main/java/com/kora/ecommerce/catalog/batch/
-?? services/catalog-service/src/main/java/com/kora/ecommerce/catalog/cache/
-?? services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service/ProductDetailCacheInvalidator.java
-?? services/catalog-service/src/main/resources/db/migration/V3__create_catalog_batch_metadata.sql
-?? services/catalog-service/src/test/java/com/kora/ecommerce/catalog/batch/
-?? services/catalog-service/src/test/java/com/kora/ecommerce/catalog/cache/
-?? services/catalog-service/src/test/java/com/kora/ecommerce/catalog/service/
-?? services/catalog-service/src/test/resources/supplier-import/
-```
+Sprint 2 is complete and committed. Sprint 3 is prepared but no Sprint 3
+implementation task has run yet.
 
 ## Known Issues
 none
 
 ## Next Task
-none
+ECOM-016
 
 ## Exact Next Agent Prompt
-No pending task.
+Generate it with:
+
+```bash
+scripts/night-agent-prompt-builder.sh ECOM-016
+```
 
 ## Protected Files Reminder
 
@@ -64,4 +43,5 @@ No pending task.
 
 ## Recovery Notes
 
-Review the log and changed files. If not using Git, initialize Git before a long retry when possible.
+Commit the queue preparation before starting because the runner rejects a dirty
+working tree. Then run the Sprint 3 dry run and overnight command from `STATE.md`.

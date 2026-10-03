@@ -129,6 +129,30 @@ README.md
 STATE.md
 EOF
       ;;
+    ECOM-016|ECOM-017|ECOM-018|ECOM-019|ECOM-020|ECOM-022)
+      cat <<'EOF'
+services/order-service/**
+pom.xml
+.env.example
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-021)
+      cat <<'EOF'
+infra/debezium/**
+infra/README.md
+docker-compose.yml
+.env.example
+scripts/register-order-outbox-connector.sh
+scripts/verify-order-cdc.sh
+services/order-service/**
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
     *)
       return 1
       ;;

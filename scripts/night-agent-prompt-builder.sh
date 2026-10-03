@@ -50,6 +50,7 @@ task_phase() {
   case "$1" in
     ECOM-001|ECOM-002|ECOM-003|ECOM-004|ECOM-005|ECOM-006) echo "sprint1" ;;
     ECOM-007|ECOM-008|ECOM-009|ECOM-010|ECOM-011|ECOM-012|ECOM-013|ECOM-014|ECOM-015) echo "sprint2" ;;
+    ECOM-016|ECOM-017|ECOM-018|ECOM-019|ECOM-020|ECOM-021|ECOM-022) echo "sprint3" ;;
     *) echo "unknown"; return 1 ;;
   esac
 }
@@ -58,6 +59,7 @@ context_pack_for_task() {
   case "$(task_phase "$1")" in
     sprint1) echo "docs/night-runner/sprint1-context-pack.md" ;;
     sprint2) echo "docs/night-runner/sprint2-context-pack.md" ;;
+    sprint3) echo "docs/night-runner/sprint3-context-pack.md" ;;
     *) return 1 ;;
   esac
 }
@@ -153,6 +155,63 @@ services/catalog-service/src/main/java/com/kora/ecommerce/catalog/batch
 services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/admin
 services/catalog-service/src/main/java/com/kora/ecommerce/catalog/security/CatalogSecurityConfiguration.java
 services/catalog-service/src/test
+EOF
+      ;;
+    ECOM-016)
+      cat <<'EOF'
+services/order-service/pom.xml
+services/order-service/src/main/resources/application.yml
+services/order-service/src/main/java/com/kora/ecommerce/order
+services/order-service/src/test
+infra/postgres/init/01-create-databases.sql
+EOF
+      ;;
+    ECOM-017)
+      cat <<'EOF'
+services/order-service/src/main/java/com/kora/ecommerce/order
+services/order-service/src/main/resources/application.yml
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/customer/CatalogBrowseController.java
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/customer/CatalogBrowseDtos.java
+EOF
+      ;;
+    ECOM-018)
+      cat <<'EOF'
+services/order-service/src/main/java/com/kora/ecommerce/order
+services/order-service/src/test
+docs/night-runner/sprint3-context-pack.md
+EOF
+      ;;
+    ECOM-019)
+      cat <<'EOF'
+services/order-service/src/main/java/com/kora/ecommerce/order/domain
+services/order-service/src/main/java/com/kora/ecommerce/order/repository
+services/order-service/src/main/java/com/kora/ecommerce/order/security/OrderSecurityConfiguration.java
+services/order-service/src/test
+EOF
+      ;;
+    ECOM-020)
+      cat <<'EOF'
+services/order-service/src/main/java/com/kora/ecommerce/order
+services/order-service/src/main/resources/db/migration
+services/order-service/src/test
+DESIGN.md
+EOF
+      ;;
+    ECOM-021)
+      cat <<'EOF'
+docker-compose.yml
+.env.example
+infra/README.md
+infra/postgres/init/01-create-databases.sql
+services/order-service/src/main/resources/db/migration
+docs/night-runner/sprint3-context-pack.md
+EOF
+      ;;
+    ECOM-022)
+      cat <<'EOF'
+services/order-service/src/main/java/com/kora/ecommerce/order
+services/order-service/src/main/resources/db/migration
+services/order-service/src/test
 EOF
       ;;
   esac

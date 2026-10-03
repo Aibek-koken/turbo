@@ -6,7 +6,8 @@ QUEUE_FILE="${1:-docs/night-runner/task-queue.md}"
 task_phase() {
   case "$1" in
     ECOM-001|ECOM-002|ECOM-003|ECOM-004|ECOM-005|ECOM-006) echo "sprint1" ;;
-    ECOM-007|ECOM-008|ECOM-009) echo "sprint2" ;;
+    ECOM-007|ECOM-008|ECOM-009|ECOM-010|ECOM-011|ECOM-012|ECOM-013|ECOM-014|ECOM-015) echo "sprint2" ;;
+    ECOM-016|ECOM-017|ECOM-018|ECOM-019|ECOM-020|ECOM-021|ECOM-022) echo "sprint3" ;;
     *) echo "unknown" ;;
   esac
 }
@@ -73,5 +74,5 @@ fi
 
 echo
 echo "== Suggested commands =="
-echo "scripts/night-agent-runner.sh --agent codex --dry-run"
-echo "scripts/night-agent-runner.sh --agent codex --overnight --max-minutes 28800"
+echo "scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-minutes 28800 --dry-run"
+echo "scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-minutes 28800"

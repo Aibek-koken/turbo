@@ -9,10 +9,11 @@ This queue is consumed by `scripts/night-agent-runner.sh`.
 Primary target:
 
 - Sprint 1 complete.
-- Complete Sprint 2: US-06 through US-10.
+- Sprint 2 complete: US-06 through US-10.
+- Complete Sprint 3: US-11 through US-15.
 
-Do not continue into Order, Payment, Audit, Notification or CI unless the queue
-is explicitly extended.
+Do not continue into Payment, Audit, Notification or CI unless the queue is
+explicitly extended.
 
 ## Shared Rules
 
@@ -435,4 +436,205 @@ Allowed files:
 
 Validation:
 - `scripts/project-validate.sh catalog-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-016 phase=sprint3 status=pending -->
+## ECOM-016: Add Order Service persistence foundation
+
+Status: pending
+
+Story coverage:
+- US-11 Create Order with Product Snapshot
+- US-12 Order State Machine
+- US-13 Transactional Outbox Persistence
+
+Scope:
+- Add Spring Data JPA, Flyway, PostgreSQL and H2 test dependencies to Order Service.
+- Configure the service-owned `orders` PostgreSQL database without sharing Catalog entities or repositories.
+- Add Flyway schema for orders, immutable order-item snapshots, status history and append-only outbox events.
+- Model UUID identifiers, currency/monetary precision, UTC timestamps, optimistic versioning, constraints and read-oriented indexes.
+- Add JPA entities and repositories that preserve aggregate ownership and avoid cascade behavior outside the order boundary.
+- Add migration and repository tests, including unique/foreign-key and monetary constraints.
+
+Allowed files:
+- `services/order-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh order-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-017 phase=sprint3 status=pending -->
+## ECOM-017: Add the Catalog product-snapshot client
+
+Status: pending
+
+Story coverage:
+- US-11 Create Order with Product Snapshot
+
+Scope:
+- Add an Order Service Catalog client abstraction using Spring `RestClient` and an environment-driven Catalog base URL.
+- Forward the current bearer token and correlation ID when resolving products; do not add a trusted anonymous bypass.
+- Map the existing active product-detail response into a small Order-owned snapshot contract.
+- Convert missing, inactive, malformed and unavailable Catalog responses into explicit order-domain/API failures without persisting partial data.
+- Keep network calls outside database transactions and make the client replaceable in unit tests.
+- Add focused client tests for a valid product and each relevant failure class.
+
+Allowed files:
+- `services/order-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh order-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-018 phase=sprint3 status=pending -->
+## ECOM-018: Implement authenticated order creation
+
+Status: pending
+
+Story coverage:
+- US-11 Create Order with Product Snapshot
+
+Scope:
+- Add a `CUSTOMER` order-create API under the existing customer route boundary.
+- Derive customer identity only from the authenticated JWT `sub` claim.
+- Accept product IDs and bounded positive quantities; reject empty orders, duplicate products and mixed currencies.
+- Resolve current products through the Catalog client, snapshot ID/SKU/name/unit price/currency, and calculate line/order totals with `BigDecimal`.
+- Persist the order, items and initial `CREATED` history record atomically; do not accept names or prices from clients.
+- Return a stable response and Problem Details errors without exposing persistence or remote-service internals.
+- Add service and MockMvc tests for totals, snapshots, JWT ownership and all specified rejection paths.
+
+Allowed files:
+- `services/order-service/**`
+- `pom.xml`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh order-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-019 phase=sprint3 status=pending -->
+## ECOM-019: Implement the order state machine and history
+
+Status: pending
+
+Story coverage:
+- US-12 Order State Machine
+
+Scope:
+- Centralize the allowed V1 transitions for `CREATED`, `PAYMENT_PENDING`, `PAID`, `PAYMENT_FAILED` and `CANCELLED`.
+- Add an operations transition API protected by `OPS_ADMIN`; keep the application service usable by future internal payment handling.
+- Persist the current state and append its timestamped history entry in one transaction.
+- Reject no-op and invalid transitions without changing the order or history.
+- Use optimistic locking so concurrent transitions cannot silently overwrite each other.
+- Add exhaustive transition-matrix, persistence/history, authorization and concurrent-update tests.
+
+Allowed files:
+- `services/order-service/**`
+- `pom.xml`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh order-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-020 phase=sprint3 status=pending -->
+## ECOM-020: Persist OrderCreated through the transactional outbox
+
+Status: pending
+
+Story coverage:
+- US-13 Transactional Outbox Persistence
+
+Scope:
+- Build the versioned `OrderCreated` event envelope defined in `DESIGN.md` and the Sprint 3 context pack.
+- Persist the created order and one append-only outbox event in the same Spring transaction.
+- Include event ID, aggregate ID, event type/version, UTC occurrence time, trace ID, correlation ID and the immutable order snapshot payload.
+- Keep JSON serialization deterministic and independent from JPA lazy proxies.
+- Do not publish directly to Kafka and do not add a second transaction or after-commit outbox insert.
+- Add integration tests proving successful atomic commit and a forced rollback that leaves neither order nor outbox row.
+
+Allowed files:
+- `services/order-service/**`
+- `pom.xml`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh order-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-021 phase=sprint3 status=pending -->
+## ECOM-021: Route Order outbox events through Debezium and Kafka
+
+Status: pending
+
+Story coverage:
+- US-14 Debezium CDC to Kafka
+
+Scope:
+- Add a versioned Debezium PostgreSQL connector definition that captures only the Order Service outbox table.
+- Configure the outbox event router for `ecommerce.order.events`, keyed by aggregate ID, while preserving the complete versioned event envelope.
+- Add environment placeholders required for local logical replication without checking in real credentials.
+- Add an idempotent connector registration helper and concise local runbook with connector/topic inspection commands.
+- Add a bounded smoke helper that can insert or create a test outbox event and verify event ID/aggregate ID on the expected Kafka topic without deleting existing data.
+- Validate JSON/config structure and Docker Compose wiring; do not implement an application-side Kafka publisher.
+
+Allowed files:
+- `infra/debezium/**`
+- `infra/README.md`
+- `docker-compose.yml`
+- `.env.example`
+- `scripts/register-order-outbox-connector.sh`
+- `scripts/verify-order-cdc.sh`
+- `services/order-service/**`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh order-test`
+- `scripts/project-validate.sh order-cdc-config`
+<!-- /task -->
+
+<!-- task:id=ECOM-022 phase=sprint3 status=pending -->
+## ECOM-022: Add customer order queries and operations history
+
+Status: pending
+
+Story coverage:
+- US-15 Order Query & History API
+
+Scope:
+- Add bounded, deterministic pagination for a customer to list only orders owned by their JWT subject.
+- Add customer order-detail lookup with the same ownership enforcement.
+- Add an `OPS_ADMIN` lookup by order ID for support without exposing arbitrary customer-list access.
+- Return item snapshots, monetary totals/currency, current status and chronologically ordered status history.
+- Use repository fetch plans or focused projections to avoid obvious N+1 query behavior.
+- Return stable Problem Details responses for missing or non-owned orders without leaking another customer's data.
+- Add repository/service/MockMvc tests for ownership isolation, operations access, response shape, pagination and history order.
+
+Allowed files:
+- `services/order-service/**`
+- `pom.xml`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh order-test`
 <!-- /task -->

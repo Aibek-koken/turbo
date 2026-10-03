@@ -191,12 +191,23 @@ protection, launch/status responses and failure/restart idempotency.
 Night run target:
 
 1. Sprint 1 complete.
-2. Sprint 2 US-06 through US-08 complete.
-3. Sprint 2 US-10 supplier import work is complete through ECOM-015.
+2. Sprint 2 complete through ECOM-015.
+3. Sprint 3 is queued as ECOM-016 through ECOM-022, covering US-11 through US-15.
 
-Excluded from this Sprint 2 run:
+Sprint 3 execution order:
 
-- Order, payment, audit, notification and E2E flows.
+- Order persistence foundation.
+- Catalog snapshot client and authenticated order creation.
+- Order state machine and status history.
+- Transactional `OrderCreated` outbox persistence.
+- Debezium CDC routing to `ecommerce.order.events`.
+- Customer-owned and operations order query/history APIs.
+
+Excluded from this Sprint 3 run:
+
+- Payment consumption and payment-result handling.
+- Audit and notification flows.
+- Broad E2E/Testcontainers work.
 - CI release pipeline.
 
 ## Environment Notes
@@ -231,14 +242,30 @@ tests:
 scripts/project-validate.sh catalog-test
 ```
 
-## Next Command
+Order Service tests use Mockito's subclass mock maker because this machine's
+Java 21 runtime does not permit Byte Buddy's inline self-attachment.
 
-No further Sprint 2 task is queued after ECOM-015. Review and commit the
-completed ECOM-010 through ECOM-015 changes if the runner has not already
-handled that.
+Sprint 3 runner preparation validation passed:
 
 ```bash
-scripts/project-validate.sh catalog-test
+bash -n scripts/night-agent-runner.sh scripts/night-agent-prompt-builder.sh scripts/night-agent-safe-approve.sh scripts/night-agent-status.sh scripts/project-validate.sh
+scripts/project-validate.sh order-test
+scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-minutes 28800 --dry-run
 ```
 
-Next task: none queued.
+## Next Command
+
+Sprint 2 is committed at `758bd38`. Commit the Sprint 3 queue preparation, then
+check the first generated task without running it:
+
+```bash
+scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-minutes 28800 --dry-run
+```
+
+After a successful dry run, start the Sprint 3 queue under `caffeinate`:
+
+```bash
+caffeinate -dimsu scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-minutes 28800
+```
+
+Next task: ECOM-016.

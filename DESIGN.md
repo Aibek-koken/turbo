@@ -100,11 +100,14 @@ Initial events:
 8. Catalog admin APIs.
 9. Customer browse/detail APIs.
 
-Sprint 2 items after this slice are Redis/Redisson and Spring Batch.
+10. Catalog Redis/Redisson cache and Spring Batch supplier import.
+11. Order schema, product snapshots and authenticated order creation.
+12. Order state machine and status history.
+13. Transactional outbox and Debezium routing to Kafka.
+14. Customer-owned and operations order query APIs.
 
 ## Current Constraints
 
 The current machine reports Java 17, while the project requires Java 21. Agents
 must keep Java 21 as the target. If compile/test validation fails only because
 Java 21 is unavailable, record that clearly in `STATE.md` and the handoff.
-
