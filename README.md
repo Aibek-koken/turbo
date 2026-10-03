@@ -85,3 +85,5 @@ See [docs/service-rbac.md](docs/service-rbac.md) for downstream
 resource-server role rules and customer-scoped follow-up constraints.
 See [docs/observability-runbook.md](docs/observability-runbook.md) for local
 metrics, tracing and correlation checks.
+See [docs/catalog/supplier-import.md](docs/catalog/supplier-import.md) for the
+Catalog Service supplier CSV import contract.

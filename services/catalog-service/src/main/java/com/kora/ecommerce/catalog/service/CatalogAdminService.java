@@ -33,14 +33,17 @@ public class CatalogAdminService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final ProductAttributeRepository productAttributeRepository;
+    private final ProductDetailCacheInvalidator productDetailCacheInvalidator;
 
     public CatalogAdminService(
             CategoryRepository categoryRepository,
             ProductRepository productRepository,
-            ProductAttributeRepository productAttributeRepository) {
+            ProductAttributeRepository productAttributeRepository,
+            ProductDetailCacheInvalidator productDetailCacheInvalidator) {
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
         this.productAttributeRepository = productAttributeRepository;
+        this.productDetailCacheInvalidator = productDetailCacheInvalidator;
     }
 
     @Transactional
@@ -64,14 +67,18 @@ public class CatalogAdminService {
         category.setSlug(slug);
         category.setDescription(optionalText(request.description()));
 
-        return CategoryResponse.from(categoryRepository.saveAndFlush(category));
+        Category saved = categoryRepository.saveAndFlush(category);
+        productDetailCacheInvalidator.evictCategoryProductsAfterCommit(saved.getId());
+        return CategoryResponse.from(saved);
     }
 
     @Transactional
     public CategoryResponse deactivateCategory(UUID categoryId) {
         Category category = findCategory(categoryId);
         category.setActive(false);
-        return CategoryResponse.from(categoryRepository.saveAndFlush(category));
+        Category saved = categoryRepository.saveAndFlush(category);
+        productDetailCacheInvalidator.evictCategoryProductsAfterCommit(saved.getId());
+        return CategoryResponse.from(saved);
     }
 
     @Transactional
@@ -90,7 +97,9 @@ public class CatalogAdminService {
         product.setStatus(Optional.ofNullable(request.status()).orElse(ProductStatus.DRAFT));
         addInitialAttributes(product, request.attributes());
 
-        return ProductResponse.from(productRepository.saveAndFlush(product));
+        Product saved = productRepository.saveAndFlush(product);
+        productDetailCacheInvalidator.evictProductAfterCommit(saved.getId());
+        return ProductResponse.from(saved);
     }
 
     @Transactional
@@ -108,14 +117,18 @@ public class CatalogAdminService {
         product.setCurrency(requiredText(request.currency()));
         product.setStatus(request.status());
 
-        return ProductResponse.from(productRepository.saveAndFlush(product));
+        Product saved = productRepository.saveAndFlush(product);
+        productDetailCacheInvalidator.evictProductAfterCommit(saved.getId());
+        return ProductResponse.from(saved);
     }
 
     @Transactional
     public ProductResponse deactivateProduct(UUID productId) {
         Product product = findProductDetails(productId);
         product.setStatus(ProductStatus.INACTIVE);
-        return ProductResponse.from(productRepository.saveAndFlush(product));
+        Product saved = productRepository.saveAndFlush(product);
+        productDetailCacheInvalidator.evictProductAfterCommit(saved.getId());
+        return ProductResponse.from(saved);
     }
 
     @Transactional
@@ -139,7 +152,9 @@ public class CatalogAdminService {
         attribute.setAttributeValue(attributeValue);
         attribute.setActive(true);
 
-        return ProductAttributeResponse.from(productAttributeRepository.saveAndFlush(attribute));
+        ProductAttribute saved = productAttributeRepository.saveAndFlush(attribute);
+        productDetailCacheInvalidator.evictProductAfterCommit(productId);
+        return ProductAttributeResponse.from(saved);
     }
 
     @Transactional
@@ -154,14 +169,18 @@ public class CatalogAdminService {
         attribute.setAttributeKey(attributeKey);
         attribute.setAttributeValue(requiredText(request.attributeValue()));
 
-        return ProductAttributeResponse.from(productAttributeRepository.saveAndFlush(attribute));
+        ProductAttribute saved = productAttributeRepository.saveAndFlush(attribute);
+        productDetailCacheInvalidator.evictProductAfterCommit(productId);
+        return ProductAttributeResponse.from(saved);
     }
 
     @Transactional
     public ProductAttributeResponse deactivateAttribute(UUID productId, UUID attributeId) {
         ProductAttribute attribute = findAttribute(productId, attributeId);
         attribute.setActive(false);
-        return ProductAttributeResponse.from(productAttributeRepository.saveAndFlush(attribute));
+        ProductAttribute saved = productAttributeRepository.saveAndFlush(attribute);
+        productDetailCacheInvalidator.evictProductAfterCommit(productId);
+        return ProductAttributeResponse.from(saved);
     }
 
     private void addInitialAttributes(Product product, List<ProductAttributeInput> attributes) {

@@ -1,40 +1,60 @@
 # Night Agent Handoff
 
 Requested phases: sprint2
-Current task: ECOM-010
-Last completed task: ECOM-009
-Last status: pending
-Last log: .agent-runs/2026-10-03/ECOM-009.log
+Current task: ECOM-015
+Last completed task: ECOM-015
+Last status: done
+Last log: .agent-runs/2026-10-03/ECOM-015.log
 
 ## Files Changed
-- AGENTS.md
-- STATE.md
-- docs/night-runner/handoff.md
-- docs/night-runner/sprint2-context-pack.md
-- docs/night-runner/task-queue.md
-- scripts/night-agent-prompt-builder.sh
-- scripts/night-agent-runner.sh
-- scripts/night-agent-safe-approve.sh
-- scripts/project-validate.sh
-- services/catalog-service/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker
+- services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/admin/CatalogAdminController.java
+- services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/admin/CatalogAdminDtos.java
+- services/catalog-service/src/main/java/com/kora/ecommerce/catalog/batch/SupplierImportControlService.java
+- services/catalog-service/src/main/java/com/kora/ecommerce/catalog/batch/SupplierImportExecutionSummary.java
+- services/catalog-service/src/test/java/com/kora/ecommerce/catalog/batch/SupplierImportControlServiceTest.java
 
 ## Tests Run
-- `bash -n` for all runner/validation scripts (passed)
-- prompt generation for ECOM-010 through ECOM-015 (passed)
-- Sprint 2 dry-run selecting ECOM-010 (passed)
-- `scripts/project-validate.sh catalog-test` on Java 21 (passed)
+scripts/project-validate.sh catalog-test
 
 ## Current Status
-Sprint 2 queue extension is validated and ready to commit before the overnight run.
+```text
+ M .env.example
+ M AGENTS.md
+ M README.md
+ M STATE.md
+ M docs/night-runner/handoff.md
+ M docs/night-runner/task-queue.md
+ M pom.xml
+ M services/catalog-service/pom.xml
+ M services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/admin/CatalogAdminController.java
+ M services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api/admin/CatalogAdminDtos.java
+ M services/catalog-service/src/main/java/com/kora/ecommerce/catalog/repository/ProductRepository.java
+ M services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service/CatalogAdminService.java
+ M services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service/CatalogBrowseService.java
+ M services/catalog-service/src/main/resources/application.yml
+ M services/catalog-service/src/test/java/com/kora/ecommerce/catalog/api/admin/CatalogAdminControllerTest.java
+ M services/catalog-service/src/test/java/com/kora/ecommerce/catalog/api/customer/CatalogBrowseControllerTest.java
+ M services/catalog-service/src/test/java/com/kora/ecommerce/catalog/repository/CatalogMigrationTest.java
+ M services/catalog-service/src/test/java/com/kora/ecommerce/catalog/security/CatalogSecurityConfigurationTest.java
+?? docs/catalog/
+?? services/catalog-service/src/main/java/com/kora/ecommerce/catalog/batch/
+?? services/catalog-service/src/main/java/com/kora/ecommerce/catalog/cache/
+?? services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service/ProductDetailCacheInvalidator.java
+?? services/catalog-service/src/main/resources/db/migration/V3__create_catalog_batch_metadata.sql
+?? services/catalog-service/src/test/java/com/kora/ecommerce/catalog/batch/
+?? services/catalog-service/src/test/java/com/kora/ecommerce/catalog/cache/
+?? services/catalog-service/src/test/java/com/kora/ecommerce/catalog/service/
+?? services/catalog-service/src/test/resources/supplier-import/
+```
 
 ## Known Issues
 none
 
 ## Next Task
-ECOM-010
+none
 
 ## Exact Next Agent Prompt
-Generated automatically by the runner for ECOM-010.
+No pending task.
 
 ## Protected Files Reminder
 
@@ -44,4 +64,4 @@ Generated automatically by the runner for ECOM-010.
 
 ## Recovery Notes
 
-Commit the queue and runner changes before starting. The runner will execute only pending Sprint 2 tasks when launched with `--overnight --phase sprint2`.
+Review the log and changed files. If not using Git, initialize Git before a long retry when possible.

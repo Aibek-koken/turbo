@@ -4,15 +4,26 @@ Last updated: 2026-10-03
 
 ## Current Status
 
-ECOM-009 is complete. Sprint 2 planning is now extended through US-10, with
-ECOM-010 through ECOM-015 queued for Redis/Redisson caching and Spring Batch
-supplier import. The repository has a Java 21 / Spring Boot 3.x Maven
-monorepo scaffold, a local Docker Compose infrastructure baseline, an
+ECOM-015 is complete. Sprint 2 now has the Redis/Redisson catalog cache
+foundation plus product-detail cache-aside, invalidation and stampede
+protection in place, and the Spring Batch supplier-import path now validates
+supplier CSV rows, skips bad rows with deterministic error reports, upserts by
+category slug and product SKU without duplicate records, evicts changed
+product-detail cache entries after committed import chunks, and exposes
+protected `CATALOG_ADMIN` launch/status APIs constrained to a configured local
+import directory. The import control layer rejects traversal, remote/URL-style
+paths and non-CSV files, prevents concurrent launches of the same supplier file,
+returns sanitized processed/skipped/failed counts plus the relative error-report
+location, and restarts failed chunks by relaunching the same supplier file
+without duplicating committed records. The repository has a Java 21 / Spring
+Boot 3.x Maven monorepo scaffold, a local Docker Compose infrastructure baseline, an
 importable Keycloak realm for local gateway/API testing, secure gateway
 routing, service-level RBAC for the first downstream service boundaries and a
 local observability baseline. Catalog Service now has its initial PostgreSQL
 schema, Flyway migrations, JPA entities, repositories, admin management API and
-customer-facing browse/detail API.
+customer-facing browse/detail API plus Redis-backed product-detail cache-aside
+reads, write-side invalidation, Redisson miss protection and a restartable
+chunk-oriented supplier CSV import job.
 
 - `services/gateway-service`
 - `services/catalog-service`
@@ -35,6 +46,7 @@ Prepared by this setup:
 - Developer setup notes: `README.md` and `docs/developer-setup.md`
 - Service RBAC notes: `docs/service-rbac.md`
 - Observability runbook: `docs/observability-runbook.md`
+- Supplier import contract: `docs/catalog/supplier-import.md`
 - Local infrastructure compose: `docker-compose.yml`
 - Local placeholder environment sample: `.env.example`
 - Infrastructure notes and configs under `infra/`
@@ -106,14 +118,81 @@ detail response shape, hidden draft/inactive state and forbidden customer access
 to admin-only write paths. Catalog tests also now use an H2 PostgreSQL-mode URL
 that lets Flyway and Hibernate schema validation agree on table metadata.
 
+ECOM-010 added the Catalog Service Redis/Redisson cache foundation. The catalog
+module now depends on Spring Data Redis and Redisson, binds Redis connection and
+product-detail cache settings from environment variables, and exposes a focused
+`ProductDetailCache` abstraction with Redis and no-op implementations. Product
+detail cache keys are stable and namespaced, lock keys are generated alongside
+data keys for the next stampede-protection task, and cached values use explicit
+Jackson JSON serialization without Java or polymorphic type metadata. Existing
+web/API tests run with catalog caching and Redis health disabled so database
+reads remain functional without Redis in test/local troubleshooting contexts.
+Focused cache tests cover configuration binding/bounds, deterministic key
+generation and product-detail JSON round-tripping.
+
+ECOM-011 wired product-detail cache-aside behavior into customer detail reads.
+Valid active cache hits return without querying the product repository, while
+misses load the authoritative active product from PostgreSQL and populate Redis
+through the configured TTL path. Admin product and attribute create/update/
+deactivate operations schedule affected product cache eviction after commit.
+Category update/deactivation now invalidates affected product entries through a
+bounded paged product-ID query. Focused tests cover hit, miss, inactive cached
+entry rejection, Redis TTL writes and the product, attribute and category
+invalidation paths.
+
+ECOM-012 added per-product Redisson stampede protection around product-detail
+cache misses. Detail reads now check Redis, acquire the configured product lock
+on a miss, re-check Redis inside the lock, then perform the PostgreSQL load and
+cache write only if the entry is still absent. Lock wait and lease durations use
+the existing bounded `catalog.cache` settings, lock timeout/interruption produce
+explicit failures, and unlock is attempted only when the current thread owns the
+lock. Tests cover Redisson wait/lease usage, timeout, interruption, owned-lock
+release and a deterministic two-thread miss proving one repository load.
+
+ECOM-013 added the Catalog Service Spring Batch supplier import foundation. The
+catalog module now depends on Spring Batch, disables automatic job startup and
+schema initialization, binds `catalog.supplier-import.chunk-size` from the
+environment and stores Batch metadata through Flyway migration
+`V3__create_catalog_batch_metadata.sql` in the Catalog database. The
+`supplierImportJob` and `supplierImportStep` read a documented supplier CSV
+contract from an `inputFile` job parameter with restartable reader state and
+chunk-oriented processing. Documentation and a non-production sample CSV were
+added, and tests cover job/step registration plus chunked processing of a valid
+CSV into H2 with Batch metadata persisted in JDBC tables.
+
+ECOM-014 completed supplier CSV row validation and error reporting. CSV rows
+now carry source line numbers, expected validation failures are represented as
+skippable row-validation exceptions, and the supplier import step skips
+validation/read-format failures without skipping unexpected writer/database
+failures. Each run writes a deterministic `row_number,reason` error report to
+the optional `errorReportFile` job parameter or to the default
+`<inputFile>.errors.csv` path, and records the report path/count in Batch
+execution context. Import writes keep per-chunk category/product maps so
+duplicate slugs/SKUs in the same chunk update the same JPA entities, products
+upsert by SKU, categories upsert by slug, currencies normalize uppercase, and
+changed product-detail cache entries are evicted after chunk commit. Tests now
+cover mixed valid/invalid files, update upserts, duplicate SKU rows, report
+contents and import-driven cache eviction.
+
+ECOM-015 added protected Catalog Service supplier-import control. Catalog admins
+can launch imports through `POST /api/catalog/admin/supplier-imports` using a
+relative `.csv` path under `catalog.supplier-import.import-directory` and
+inspect executions through `GET /api/catalog/admin/supplier-imports/{executionId}`.
+The control service rejects path traversal, absolute paths, URL-style values and
+non-CSV files, avoids exposing host paths by returning relative error-report
+locations, blocks duplicate running launches for the same supplier file, and
+uses the canonical input file as the identifying Batch job parameter so failed
+chunks restart safely without duplicating already committed product/category
+upserts. Tests cover import authorization, path validation, duplicate launch
+protection, launch/status responses and failure/restart idempotency.
+
 ## Active Delivery Target
 
 Night run target:
 
 1. Sprint 1 complete.
 2. Sprint 2 US-06 through US-08 complete.
-3. Complete Sprint 2 with US-09 Redis/Redisson and US-10 Spring Batch supplier
-   import through ECOM-010 to ECOM-015.
+3. Sprint 2 US-10 supplier import work is complete through ECOM-015.
 
 Excluded from this Sprint 2 run:
 
@@ -132,25 +211,21 @@ Excluded from this Sprint 2 run:
 
 ## Latest Validation
 
-ECOM-009 validation passed:
+ECOM-015 validation passed:
 
 ```bash
-scripts/project-validate.sh catalog-validate
-```
-
-Catalog tests also passed with Java 21 selected explicitly:
-
-```bash
-JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home mvn -q -pl services/catalog-service -am test
+scripts/project-validate.sh catalog-test
 ```
 
 Running plain `mvn -q -pl services/catalog-service -am test` without setting
 `JAVA_HOME` still picks up Java 17 and fails with `release version 21 not
 supported`.
 
-The runner and `scripts/project-validate.sh` now select the installed Java 21
-even when the parent shell exports a Java 17 `JAVA_HOME`. The Sprint 2 planning
-baseline passed the full Catalog Service tests:
+The runner and `scripts/project-validate.sh` select the installed Java 21 even
+when the parent shell exports a Java 17 `JAVA_HOME`. The ECOM-015 protected
+supplier import launch/status, path validation, duplicate-launch guard,
+restartability and final-data idempotency work passed the full Catalog Service
+tests:
 
 ```bash
 scripts/project-validate.sh catalog-test
@@ -158,11 +233,12 @@ scripts/project-validate.sh catalog-test
 
 ## Next Command
 
-The remaining Sprint 2 queue starts at ECOM-010. Commit the planning changes,
-then run only the Sprint 2 phase overnight.
+No further Sprint 2 task is queued after ECOM-015. Review and commit the
+completed ECOM-010 through ECOM-015 changes if the runner has not already
+handled that.
 
 ```bash
-caffeinate -dimsu scripts/night-agent-runner.sh --agent codex --overnight --phase sprint2 --max-minutes 28800
+scripts/project-validate.sh catalog-test
 ```
 
-Next task: ECOM-010.
+Next task: none queued.

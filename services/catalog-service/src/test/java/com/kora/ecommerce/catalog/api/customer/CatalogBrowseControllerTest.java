@@ -36,7 +36,9 @@ import org.springframework.test.web.servlet.MockMvc;
         "spring.datasource.url=jdbc:h2:mem:catalog_browse_api;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=validate"
+        "spring.jpa.hibernate.ddl-auto=validate",
+        "catalog.cache.enabled=false",
+        "management.health.redis.enabled=false"
 })
 class CatalogBrowseControllerTest {
 

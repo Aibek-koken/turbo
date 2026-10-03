@@ -270,10 +270,10 @@ Validation:
 - `scripts/project-validate.sh catalog-validate`
 <!-- /task -->
 
-<!-- task:id=ECOM-010 phase=sprint2 status=pending -->
+<!-- task:id=ECOM-010 phase=sprint2 status=done -->
 ## ECOM-010: Add Redis and Redisson catalog cache foundation
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-09 Redis Cache-Aside & Stampede Protection
@@ -298,10 +298,10 @@ Validation:
 - `scripts/project-validate.sh catalog-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-011 phase=sprint2 status=pending -->
+<!-- task:id=ECOM-011 phase=sprint2 status=done -->
 ## ECOM-011: Implement product-detail cache-aside and invalidation
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-09 Redis Cache-Aside & Stampede Protection
@@ -327,10 +327,10 @@ Validation:
 - `scripts/project-validate.sh catalog-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-012 phase=sprint2 status=pending -->
+<!-- task:id=ECOM-012 phase=sprint2 status=done -->
 ## ECOM-012: Add Redisson stampede protection
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-09 Redis Cache-Aside & Stampede Protection
@@ -355,10 +355,10 @@ Validation:
 - `scripts/project-validate.sh catalog-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-013 phase=sprint2 status=pending -->
+<!-- task:id=ECOM-013 phase=sprint2 status=done -->
 ## ECOM-013: Add Spring Batch supplier import foundation
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-10 Supplier CSV Bulk Import
@@ -382,10 +382,10 @@ Validation:
 - `scripts/project-validate.sh catalog-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-014 phase=sprint2 status=pending -->
+<!-- task:id=ECOM-014 phase=sprint2 status=done -->
 ## ECOM-014: Implement supplier row validation, upsert and error reporting
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-10 Supplier CSV Bulk Import
@@ -409,10 +409,10 @@ Validation:
 - `scripts/project-validate.sh catalog-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-015 phase=sprint2 status=pending -->
+<!-- task:id=ECOM-015 phase=sprint2 status=done -->
 ## ECOM-015: Add protected import control and restartability
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-10 Supplier CSV Bulk Import

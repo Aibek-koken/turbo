@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+import com.kora.ecommerce.catalog.batch.SupplierImportExecutionSummary;
 import com.kora.ecommerce.catalog.domain.Category;
 import com.kora.ecommerce.catalog.domain.Product;
 import com.kora.ecommerce.catalog.domain.ProductAttribute;
@@ -70,6 +71,31 @@ public final class CatalogAdminDtos {
     public record UpdateProductAttributeRequest(
             @NotBlank @Size(max = 120) String attributeKey,
             @NotBlank @Size(max = 1000) String attributeValue) {
+    }
+
+    public record SupplierImportLaunchRequest(
+            @NotBlank @Size(max = 512) String importPath) {
+    }
+
+    public record SupplierImportResponse(
+            long executionId,
+            String status,
+            String exitCode,
+            long processedCount,
+            long skippedCount,
+            long failedCount,
+            String errorReportLocation) {
+
+        public static SupplierImportResponse from(SupplierImportExecutionSummary summary) {
+            return new SupplierImportResponse(
+                    summary.executionId(),
+                    summary.status(),
+                    summary.exitCode(),
+                    summary.processedCount(),
+                    summary.skippedCount(),
+                    summary.failedCount(),
+                    summary.errorReportLocation());
+        }
     }
 
     public record CategoryResponse(

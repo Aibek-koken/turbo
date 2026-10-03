@@ -7,6 +7,7 @@ import com.kora.ecommerce.catalog.domain.Product;
 import com.kora.ecommerce.catalog.domain.ProductStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +16,13 @@ import org.springframework.data.repository.query.Param;
 public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     Optional<Product> findBySku(String sku);
+
+    @Query("""
+            select p.id from Product p
+            where p.category.id = :categoryId
+            order by p.id
+            """)
+    Slice<UUID> findIdsByCategoryId(@Param("categoryId") UUID categoryId, Pageable pageable);
 
     @EntityGraph(attributePaths = "category")
     Page<Product> findByStatus(ProductStatus status, Pageable pageable);

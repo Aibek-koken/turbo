@@ -5,8 +5,23 @@ spring:
     url: ${CATALOG_DB_URL:jdbc:postgresql://localhost:5432/catalog}
     username: ${CATALOG_DB_USERNAME:${POSTGRES_USER:ecommerce}}
     password: ${CATALOG_DB_PASSWORD:${POSTGRES_PASSWORD:change-me-local-postgres}}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:change-me-local-redis}
+      database: ${REDIS_DATABASE:0}
+      timeout: ${REDIS_TIMEOUT:PT2S}
+      connect-timeout: ${REDIS_CONNECT_TIMEOUT:PT2S}
+      repositories:
+        enabled: false
   flyway:
     locations: classpath:db/migration
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: never
   jpa:
     hibernate:
       ddl-auto: validate
@@ -21,6 +36,17 @@ spring:
 server:
   port: 8081
 
+catalog:
+  cache:
+    enabled: ${CATALOG_CACHE_ENABLED:true}
+    product-detail-ttl: ${CATALOG_PRODUCT_DETAIL_CACHE_TTL:PT10M}
+    lock-wait: ${CATALOG_PRODUCT_DETAIL_CACHE_LOCK_WAIT:PT0.25S}
+    lock-lease: ${CATALOG_PRODUCT_DETAIL_CACHE_LOCK_LEASE:PT5S}
+    key-prefix: ${CATALOG_PRODUCT_DETAIL_CACHE_KEY_PREFIX:catalog:product-detail}
+  supplier-import:
+    chunk-size: ${CATALOG_SUPPLIER_IMPORT_CHUNK_SIZE:50}
+    import-directory: ${CATALOG_SUPPLIER_IMPORT_DIRECTORY:var/catalog/imports}
+
 management:
   endpoints:
     web:
@@ -30,6 +56,9 @@ management:
     health:
       probes:
         enabled: true
+  health:
+    redis:
+      enabled: ${MANAGEMENT_HEALTH_REDIS_ENABLED:true}
   metrics:
     tags:
       application: ${spring.application.name}

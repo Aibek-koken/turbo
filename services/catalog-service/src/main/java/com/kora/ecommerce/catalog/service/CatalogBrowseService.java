@@ -5,6 +5,8 @@ import java.util.UUID;
 import com.kora.ecommerce.catalog.api.CatalogApiException;
 import com.kora.ecommerce.catalog.api.customer.CatalogBrowseDtos.ProductBrowsePageResponse;
 import com.kora.ecommerce.catalog.api.customer.CatalogBrowseDtos.ProductDetailResponse;
+import com.kora.ecommerce.catalog.cache.ProductDetailCache;
+import com.kora.ecommerce.catalog.cache.ProductDetailCacheLock;
 import com.kora.ecommerce.catalog.domain.Product;
 import com.kora.ecommerce.catalog.domain.ProductStatus;
 import com.kora.ecommerce.catalog.repository.ProductRepository;
@@ -20,9 +22,16 @@ public class CatalogBrowseService {
     private static final ProductStatus CUSTOMER_VISIBLE_STATUS = ProductStatus.ACTIVE;
 
     private final ProductRepository productRepository;
+    private final ProductDetailCache productDetailCache;
+    private final ProductDetailCacheLock productDetailCacheLock;
 
-    public CatalogBrowseService(ProductRepository productRepository) {
+    public CatalogBrowseService(
+            ProductRepository productRepository,
+            ProductDetailCache productDetailCache,
+            ProductDetailCacheLock productDetailCacheLock) {
         this.productRepository = productRepository;
+        this.productDetailCache = productDetailCache;
+        this.productDetailCacheLock = productDetailCacheLock;
     }
 
     @Transactional(readOnly = true)
@@ -52,9 +61,32 @@ public class CatalogBrowseService {
 
     @Transactional(readOnly = true)
     public ProductDetailResponse getProduct(UUID productId) {
+        return getCachedProduct(productId)
+                .orElseGet(() -> productDetailCacheLock.withProductDetailLock(
+                        productId,
+                        () -> getCachedProduct(productId)
+                                .orElseGet(() -> loadAndCacheProduct(productId))));
+    }
+
+    private java.util.Optional<ProductDetailResponse> getCachedProduct(UUID productId) {
+        return productDetailCache.get(productId)
+                .filter(response -> isCustomerVisibleCacheEntry(productId, response));
+    }
+
+    private ProductDetailResponse loadAndCacheProduct(UUID productId) {
         Product product = productRepository.findCustomerVisibleDetailsById(productId, CUSTOMER_VISIBLE_STATUS)
                 .orElseThrow(() -> CatalogApiException.notFound("Product not found: " + productId));
-        return ProductDetailResponse.from(product);
+        ProductDetailResponse response = ProductDetailResponse.from(product);
+        productDetailCache.put(productId, response);
+        return response;
+    }
+
+    private boolean isCustomerVisibleCacheEntry(UUID productId, ProductDetailResponse response) {
+        if (productId.equals(response.id()) && response.status() == CUSTOMER_VISIBLE_STATUS) {
+            return true;
+        }
+        productDetailCache.evict(productId);
+        return false;
     }
 
     private static String optionalText(String value) {

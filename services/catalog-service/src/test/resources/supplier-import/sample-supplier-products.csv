@@ -1,0 +1,4 @@
+sku,product_name,product_description,category_slug,category_name,category_description,price_amount,currency,status,attributes
+COF-001,House Blend,Daily roast,coffee,Coffee,Roasted beans,14.50,USD,ACTIVE,roast=medium;origin=colombia
+COF-002,Espresso Blend,Dark roast,coffee,Coffee,Roasted beans,16.00,USD,DRAFT,roast=dark
+MUG-001,Stoneware Mug,Matte ceramic,mugs,Mugs,Drinkware,12.00,USD,ACTIVE,material=ceramic
