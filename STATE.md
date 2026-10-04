@@ -4,9 +4,63 @@ Last updated: 2026-10-03
 
 ## Current Status
 
-ECOM-015 is complete. Sprint 2 now has the Redis/Redisson catalog cache
-foundation plus product-detail cache-aside, invalidation and stampede
-protection in place, and the Spring Batch supplier-import path now validates
+ECOM-020 is complete. Order creation now persists a versioned `OrderCreated`
+outbox event in the same Spring transaction as the order aggregate, items and
+initial status history. The event row includes event ID, aggregate ID, event
+type/version, UTC occurrence time, trace ID, correlation ID and a deterministic
+JSON envelope whose `data` field is built from an immutable order snapshot
+rather than JPA entities or lazy proxies. Outbox payloads are stored as JSON
+objects through the existing append-only `outbox_events` table, and no
+application-side Kafka publisher, after-commit insert or second transaction was
+added. Integration tests cover a committed order/outbox pair, trace and
+correlation propagation, envelope contents and a forced rollback that leaves
+neither order nor outbox row.
+
+ECOM-019 is complete. Order Service now has a centralized V1 state machine for
+`CREATED`, `PAYMENT_PENDING`, `PAID`, `PAYMENT_FAILED` and `CANCELLED`,
+an application transition service for future internal payment handling, and an
+`OPS_ADMIN` operations API at
+`POST /api/orders/ops/orders/{orderId}/transitions`. Accepted transitions update
+the current order status and append a timestamped history entry in one database
+transaction. No-op and invalid transitions return Problem Details and leave the
+order/history unchanged. Existing JPA optimistic locking protects mutable order
+state from concurrent overwrite. Tests cover the exhaustive transition matrix,
+persistence/history behavior, operations authorization, invalid/no-op rejection
+and stale concurrent update detection.
+
+ECOM-018 is complete. Order Service now exposes authenticated customer order
+creation at `POST /api/orders/customer/orders`, deriving ownership only from
+the JWT `sub` claim. The create flow accepts product IDs and bounded positive
+quantities, rejects empty orders, duplicate product IDs, missing IDs, invalid
+quantities and mixed currencies with Problem Details, resolves snapshots
+through the Order-owned Catalog client outside the database transaction,
+calculates item/order totals with `BigDecimal`, and atomically persists the
+order, immutable item snapshots and initial `CREATED` history row. Service and
+MockMvc tests cover totals, snapshot persistence, JWT-subject ownership,
+client-supplied name/price/customer fields being ignored, CUSTOMER role access
+and the specified rejection paths.
+
+ECOM-017 is complete. Sprint 3 now has an Order-owned Catalog product-snapshot
+client: a replaceable `CatalogProductClient` abstraction backed by Spring
+`RestClient`, an environment-driven `ORDER_SERVICE_CATALOG_BASE_URL`, forwarding
+of the inbound bearer token and correlation ID, an immutable `ProductSnapshot`
+contract, explicit product-resolution failure types for missing, inactive,
+malformed and unavailable Catalog responses, API Problem Details mapping and a
+transaction guard that prevents outbound Catalog calls inside active database
+transactions. Focused client tests cover valid snapshots, forwarded headers,
+missing products, inactive products, malformed responses, unavailable Catalog
+responses and missing bearer-token rejection without a trusted anonymous bypass.
+
+ECOM-016 is complete. Sprint 3 also has the Order Service persistence
+foundation: Spring Data JPA, Flyway, PostgreSQL runtime wiring, H2 test support,
+an initial orders schema, immutable order-item snapshots, status history,
+append-only outbox persistence, JPA entities/repositories and focused
+migration/repository tests for unique, foreign-key, currency and monetary
+constraints.
+
+Sprint 2 has the Redis/Redisson catalog cache foundation plus product-detail
+cache-aside, invalidation and stampede protection in place, and the Spring
+Batch supplier-import path now validates
 supplier CSV rows, skips bad rows with deterministic error reports, upserts by
 category slug and product SKU without duplicate records, evicts changed
 product-detail cache entries after committed import chunks, and exposes
@@ -186,13 +240,35 @@ chunks restart safely without duplicating already committed product/category
 upserts. Tests cover import authorization, path validation, duplicate launch
 protection, launch/status responses and failure/restart idempotency.
 
+ECOM-016 added the Order Service persistence foundation. The order module now
+depends on Spring Data JPA, Flyway, PostgreSQL and H2 tests, connects by
+default to the service-owned local `orders` database, validates Hibernate
+metadata against Flyway and uses UTC JDBC timestamps. `V1__create_order_schema.sql`
+creates `orders`, `order_items`, `order_status_history` and `outbox_events`
+with UUID identifiers, status/currency checks, `NUMERIC(19,4)` money columns,
+optimistic `version`, immutable product snapshot fields, append-only JSON
+outbox payloads, foreign keys, uniqueness constraints and read-oriented
+indexes. JPA entities and repositories stay inside the Order boundary and do
+not reference Catalog entities or repositories. Tests cover migration metadata,
+aggregate/outbox persistence, duplicate product snapshots, missing parent
+orders, lowercase currencies and negative money.
+
+ECOM-018 added authenticated customer order creation. The Order Service now has
+a customer create endpoint under `/api/orders/customer/orders`, request/response
+contracts, an application service that validates order lines before Catalog
+lookup, a transactional persistence step for order/items/initial history, and
+Problem Details mapping for create-order validation and Catalog snapshot
+resolution failures. The API does not accept customer IDs, product names or
+prices from clients as authoritative data.
+
 ## Active Delivery Target
 
 Night run target:
 
 1. Sprint 1 complete.
 2. Sprint 2 complete through ECOM-015.
-3. Sprint 3 is queued as ECOM-016 through ECOM-022, covering US-11 through US-15.
+3. Sprint 3 is in progress. ECOM-016 through ECOM-020 are complete; ECOM-021 through ECOM-022
+   remain queued, covering US-11 through US-15.
 
 Sprint 3 execution order:
 
@@ -221,6 +297,24 @@ Excluded from this Sprint 3 run:
   long overnight work because it improves rollback and changed-file tracking.
 
 ## Latest Validation
+
+ECOM-018 validation passed:
+
+```bash
+scripts/project-validate.sh order-test
+```
+
+ECOM-017 validation passed:
+
+```bash
+scripts/project-validate.sh order-test
+```
+
+ECOM-016 validation passed:
+
+```bash
+scripts/project-validate.sh order-test
+```
 
 ECOM-015 validation passed:
 
@@ -255,17 +349,16 @@ scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-mi
 
 ## Next Command
 
-Sprint 2 is committed at `758bd38`. Commit the Sprint 3 queue preparation, then
-check the first generated task without running it:
+Continue the Sprint 3 queue with the next task only:
 
 ```bash
-scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-minutes 28800 --dry-run
+scripts/night-agent-prompt-builder.sh ECOM-019
 ```
 
-After a successful dry run, start the Sprint 3 queue under `caffeinate`:
+For an overnight continuation, run the Sprint 3 runner from the repo root:
 
 ```bash
 caffeinate -dimsu scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-minutes 28800
 ```
 
-Next task: ECOM-016.
+Next task: ECOM-019.

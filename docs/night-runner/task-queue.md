@@ -438,10 +438,10 @@ Validation:
 - `scripts/project-validate.sh catalog-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-016 phase=sprint3 status=pending -->
+<!-- task:id=ECOM-016 phase=sprint3 status=done -->
 ## ECOM-016: Add Order Service persistence foundation
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-11 Create Order with Product Snapshot
@@ -468,10 +468,10 @@ Validation:
 - `scripts/project-validate.sh order-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-017 phase=sprint3 status=pending -->
+<!-- task:id=ECOM-017 phase=sprint3 status=done -->
 ## ECOM-017: Add the Catalog product-snapshot client
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-11 Create Order with Product Snapshot
@@ -496,10 +496,10 @@ Validation:
 - `scripts/project-validate.sh order-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-018 phase=sprint3 status=pending -->
+<!-- task:id=ECOM-018 phase=sprint3 status=done -->
 ## ECOM-018: Implement authenticated order creation
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-11 Create Order with Product Snapshot
@@ -524,10 +524,10 @@ Validation:
 - `scripts/project-validate.sh order-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-019 phase=sprint3 status=pending -->
+<!-- task:id=ECOM-019 phase=sprint3 status=done -->
 ## ECOM-019: Implement the order state machine and history
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-12 Order State Machine
@@ -551,10 +551,10 @@ Validation:
 - `scripts/project-validate.sh order-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-020 phase=sprint3 status=pending -->
+<!-- task:id=ECOM-020 phase=sprint3 status=done -->
 ## ECOM-020: Persist OrderCreated through the transactional outbox
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-13 Transactional Outbox Persistence
