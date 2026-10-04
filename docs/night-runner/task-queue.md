@@ -10,10 +10,11 @@ Primary target:
 
 - Sprint 1 complete.
 - Sprint 2 complete: US-06 through US-10.
-- Complete Sprint 3: US-11 through US-15.
+- Sprint 3 complete: US-11 through US-15.
+- Complete Sprint 4: US-16 through US-20.
 
-Do not continue into Payment, Audit, Notification or CI unless the queue is
-explicitly extended.
+Do not continue into Audit, Notification, broad E2E/Testcontainers or CI unless
+the queue is explicitly extended.
 
 ## Shared Rules
 
@@ -636,5 +637,241 @@ Allowed files:
 - `STATE.md`
 
 Validation:
+- `scripts/project-validate.sh order-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-023 phase=sprint4 status=pending -->
+## ECOM-023: Add Payment Service persistence foundation
+
+Status: pending
+
+Story coverage:
+- US-16 Consume OrderCreatedEvent & Create Payment
+- US-17 Idempotent Payment Event Processing
+- US-19 Payment Result Events & Order Update
+
+Scope:
+- Add Spring Data JPA, Flyway, PostgreSQL runtime and H2 test dependencies to Payment Service.
+- Configure the service-owned local `payments` PostgreSQL database without sharing Order Service entities or repositories.
+- Add Flyway schema for payments, provider attempts, processed Kafka events and append-only outbox events.
+- Model UUID identifiers, order/customer references from events, payment status, monetary precision, currency, provider references, event metadata, UTC timestamps, optimistic locking and read-oriented indexes.
+- Add JPA entities and repositories that preserve the Payment Service boundary.
+- Add migration/repository tests for constraints, uniqueness, processed-event idempotency keys and outbox persistence.
+- Do not add Kafka listeners, provider calls or payment-result event production yet.
+
+Allowed files:
+- `services/payment-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh payment-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-024 phase=sprint4 status=pending -->
+## ECOM-024: Consume OrderCreated and create pending payments
+
+Status: pending
+
+Story coverage:
+- US-16 Consume OrderCreatedEvent & Create Payment
+
+Scope:
+- Add Spring Kafka dependencies and Payment Service consumer configuration for the `ecommerce.order.events` topic.
+- Define a Payment-owned `OrderCreated` envelope contract matching the Order Service outbox JSON payload.
+- Validate event type, version, aggregate ID, order ID, customer ID, total amount and currency before persistence.
+- Add a listener/application flow that creates one `PENDING` payment with order ID, customer ID, amount, currency and event metadata.
+- Reject malformed, unsupported or incomplete payloads with structured logs and no partial payment records.
+- Keep provider calls and duplicate-delivery idempotency for later Sprint 4 tasks.
+- Add focused parser/listener/application tests for valid and invalid events.
+
+Allowed files:
+- `services/payment-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh payment-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-025 phase=sprint4 status=pending -->
+## ECOM-025: Add idempotent OrderCreated event processing
+
+Status: pending
+
+Story coverage:
+- US-17 Idempotent Payment Event Processing
+
+Scope:
+- Use the `processed_events` table to make Payment Service handling idempotent by event ID and consumer name.
+- Persist the processed-event marker in the same transaction as the payment creation or skip decision.
+- Ensure duplicate delivery of the same `OrderCreated` event creates no second payment and no second provider attempt.
+- Handle concurrent duplicate deliveries deterministically through database uniqueness and clear application behavior.
+- Keep malformed payloads out of `processed_events` so corrected events can be replayed.
+- Add service/listener tests for duplicate, concurrent duplicate and normal first-delivery paths.
+
+Allowed files:
+- `services/payment-service/**`
+- `pom.xml`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh payment-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-026 phase=sprint4 status=pending -->
+## ECOM-026: Add mock payment provider client and attempt handling
+
+Status: pending
+
+Story coverage:
+- US-18 Mock Payment Provider via RestClient
+
+Scope:
+- Add a mock external payment provider client using Spring `RestClient` with environment-driven base URL and bounded timeouts.
+- Externalize provider settings without real secrets, credentials or production endpoints.
+- Add a payment processing application flow that calls the provider for pending payments only after idempotent `OrderCreated` handling.
+- Persist provider attempt records, provider references and normalized outcomes.
+- Map success, decline, timeout and 5xx responses into explicit domain results; transient provider failures must remain retryable for the later retry/DLQ task.
+- Do not emit `PaymentSucceeded` or `PaymentFailed` events yet.
+- Add focused client and application tests for success, decline, timeout, 5xx and malformed provider responses.
+
+Allowed files:
+- `services/payment-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh payment-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-027 phase=sprint4 status=pending -->
+## ECOM-027: Persist payment result events through the outbox
+
+Status: pending
+
+Story coverage:
+- US-19 Payment Result Events & Order Update
+
+Scope:
+- Build versioned `PaymentSucceeded` and `PaymentFailed` event envelopes using the project event-envelope convention.
+- Persist terminal payment status changes, provider attempt outcome and one append-only outbox event in the same transaction.
+- Include event ID, aggregate ID, payment ID, order ID, event type/version, occurred time, trace ID, correlation ID, original `OrderCreated` event ID and result data.
+- Keep JSON serialization deterministic and independent from JPA lazy proxies.
+- Do not publish directly to Kafka and do not add a second transaction or after-commit outbox insert.
+- Add integration tests proving atomic payment/result-event commit and rollback behavior.
+
+Allowed files:
+- `services/payment-service/**`
+- `pom.xml`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh payment-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-028 phase=sprint4 status=pending -->
+## ECOM-028: Route Payment outbox events through Debezium and Kafka
+
+Status: pending
+
+Story coverage:
+- US-19 Payment Result Events & Order Update
+
+Scope:
+- Add a versioned Debezium PostgreSQL connector definition that captures only the Payment Service outbox table.
+- Configure the outbox event router for `ecommerce.payment.events`, keyed by order ID or aggregate ID, while preserving the complete versioned event envelope.
+- Add local placeholder environment variables required for Debezium logical replication without checking in real credentials.
+- Add an idempotent connector registration helper and concise local runbook updates with connector/topic inspection commands.
+- Add a bounded smoke helper that inserts one synthetic payment result outbox row and verifies event ID/order ID on the expected Kafka topic without deleting existing data.
+- Validate JSON/config structure and Docker Compose wiring; do not implement an application-side Kafka publisher.
+
+Allowed files:
+- `infra/debezium/**`
+- `infra/README.md`
+- `docker-compose.yml`
+- `.env.example`
+- `scripts/register-payment-outbox-connector.sh`
+- `scripts/verify-payment-cdc.sh`
+- `services/payment-service/**`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh payment-test`
+- `scripts/project-validate.sh payment-cdc-config`
+<!-- /task -->
+
+<!-- task:id=ECOM-029 phase=sprint4 status=pending -->
+## ECOM-029: Consume payment result events in Order Service
+
+Status: pending
+
+Story coverage:
+- US-19 Payment Result Events & Order Update
+
+Scope:
+- Add Spring Kafka dependencies and Order Service consumer configuration for the `ecommerce.payment.events` topic.
+- Define Order-owned `PaymentSucceeded` and `PaymentFailed` envelope contracts and validate event type, version, order ID and payment ID.
+- Transition matching orders to `PAID` or `PAYMENT_FAILED` exactly once using the existing state machine and history model.
+- If an order is still `CREATED`, move it through `PAYMENT_PENDING` before applying the terminal result so the V1 state machine remains valid and history is complete.
+- Add an Order-owned processed-event marker so duplicate payment result events are acknowledged/skipped without duplicate history entries.
+- Return stable handling for missing orders, invalid transitions and malformed events without exposing persistence internals.
+- Add tests for success, failure, duplicate result events, CREATED-to-terminal progression, invalid payloads and missing orders.
+
+Allowed files:
+- `services/order-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh order-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-030 phase=sprint4 status=pending -->
+## ECOM-030: Add retry, backoff and dead-letter handling
+
+Status: pending
+
+Story coverage:
+- US-20 Retry, Backoff & Dead-Letter Handling
+
+Scope:
+- Configure bounded retry/backoff and dead-letter behavior for Payment Service `OrderCreated` consumption.
+- Configure bounded retry/backoff and dead-letter behavior for Order Service payment-result consumption.
+- Distinguish retryable provider or transient infrastructure failures from non-retryable malformed business payloads.
+- Ensure replay after retry or dead-letter recovery does not create duplicate payments, provider attempts or order history entries.
+- Add topic names, retry limits and backoff settings through environment-driven configuration with safe local defaults.
+- Add focused tests for retryable failures, non-retryable poison messages, DLQ routing configuration and replay idempotency.
+- Do not add broad Testcontainers or full E2E suites in this Sprint 4 task.
+
+Allowed files:
+- `services/payment-service/**`
+- `services/order-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh payment-test`
 - `scripts/project-validate.sh order-test`
 <!-- /task -->

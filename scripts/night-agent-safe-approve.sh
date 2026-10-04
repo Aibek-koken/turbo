@@ -153,6 +153,51 @@ README.md
 STATE.md
 EOF
       ;;
+    ECOM-023|ECOM-024|ECOM-025|ECOM-026|ECOM-027)
+      cat <<'EOF'
+services/payment-service/**
+pom.xml
+.env.example
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-028)
+      cat <<'EOF'
+infra/debezium/**
+infra/README.md
+docker-compose.yml
+.env.example
+scripts/register-payment-outbox-connector.sh
+scripts/verify-payment-cdc.sh
+services/payment-service/**
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-029)
+      cat <<'EOF'
+services/order-service/**
+pom.xml
+.env.example
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-030)
+      cat <<'EOF'
+services/payment-service/**
+services/order-service/**
+pom.xml
+.env.example
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
     *)
       return 1
       ;;

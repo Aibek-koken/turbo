@@ -113,6 +113,16 @@ case "$MODE" in
     need_dir services/order-service
     mvn_cmd -q -pl services/order-service -am test
     ;;
+  payment-validate)
+    need_file pom.xml
+    need_dir services/payment-service
+    mvn_cmd -q -pl services/payment-service -am -DskipTests validate
+    ;;
+  payment-test)
+    need_file pom.xml
+    need_dir services/payment-service
+    mvn_cmd -q -pl services/payment-service -am test
+    ;;
   order-cdc-config)
     need_file docker-compose.yml
     need_file infra/debezium/order-outbox-connector.json
@@ -127,6 +137,30 @@ case "$MODE" in
     if command -v jq >/dev/null 2>&1; then
       jq -e '.name and .config["connector.class"] and .config["table.include.list"]' \
         infra/debezium/order-outbox-connector.json >/dev/null
+    else
+      echo "jq is not available; skipping strict connector JSON parsing." >&2
+    fi
+    if docker compose version >/dev/null 2>&1; then
+      docker compose config >/dev/null
+    else
+      echo "Docker Compose is not available." >&2
+      exit 2
+    fi
+    ;;
+  payment-cdc-config)
+    need_file docker-compose.yml
+    need_file infra/debezium/payment-outbox-connector.json
+    if ! grep -Eq '"connector.class"[[:space:]]*:[[:space:]]*"io.debezium.connector.postgresql.PostgresConnector"' infra/debezium/payment-outbox-connector.json; then
+      echo "Payment outbox connector does not use the PostgreSQL connector." >&2
+      exit 2
+    fi
+    if ! grep -Eq 'ecommerce\.payment\.events' infra/debezium/payment-outbox-connector.json; then
+      echo "Payment outbox connector does not define ecommerce.payment.events." >&2
+      exit 2
+    fi
+    if command -v jq >/dev/null 2>&1; then
+      jq -e '.name and .config["connector.class"] and .config["table.include.list"]' \
+        infra/debezium/payment-outbox-connector.json >/dev/null
     else
       echo "jq is not available; skipping strict connector JSON parsing." >&2
     fi

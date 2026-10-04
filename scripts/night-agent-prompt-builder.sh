@@ -51,6 +51,7 @@ task_phase() {
     ECOM-001|ECOM-002|ECOM-003|ECOM-004|ECOM-005|ECOM-006) echo "sprint1" ;;
     ECOM-007|ECOM-008|ECOM-009|ECOM-010|ECOM-011|ECOM-012|ECOM-013|ECOM-014|ECOM-015) echo "sprint2" ;;
     ECOM-016|ECOM-017|ECOM-018|ECOM-019|ECOM-020|ECOM-021|ECOM-022) echo "sprint3" ;;
+    ECOM-023|ECOM-024|ECOM-025|ECOM-026|ECOM-027|ECOM-028|ECOM-029|ECOM-030) echo "sprint4" ;;
     *) echo "unknown"; return 1 ;;
   esac
 }
@@ -60,6 +61,7 @@ context_pack_for_task() {
     sprint1) echo "docs/night-runner/sprint1-context-pack.md" ;;
     sprint2) echo "docs/night-runner/sprint2-context-pack.md" ;;
     sprint3) echo "docs/night-runner/sprint3-context-pack.md" ;;
+    sprint4) echo "docs/night-runner/sprint4-context-pack.md" ;;
     *) return 1 ;;
   esac
 }
@@ -212,6 +214,79 @@ EOF
 services/order-service/src/main/java/com/kora/ecommerce/order
 services/order-service/src/main/resources/db/migration
 services/order-service/src/test
+EOF
+      ;;
+    ECOM-023)
+      cat <<'EOF'
+services/payment-service/pom.xml
+services/payment-service/src/main/resources/application.yml
+services/payment-service/src/main/java/com/kora/ecommerce/payment
+services/payment-service/src/test
+infra/postgres/init/01-create-databases.sql
+docs/night-runner/sprint4-context-pack.md
+EOF
+      ;;
+    ECOM-024)
+      cat <<'EOF'
+services/payment-service/src/main/java/com/kora/ecommerce/payment
+services/payment-service/src/main/resources/application.yml
+services/order-service/src/main/java/com/kora/ecommerce/order/application/OrderCreatedOutboxEventFactory.java
+docs/night-runner/sprint4-context-pack.md
+EOF
+      ;;
+    ECOM-025)
+      cat <<'EOF'
+services/payment-service/src/main/java/com/kora/ecommerce/payment
+services/payment-service/src/test
+docs/night-runner/sprint4-context-pack.md
+EOF
+      ;;
+    ECOM-026)
+      cat <<'EOF'
+services/payment-service/src/main/java/com/kora/ecommerce/payment
+services/payment-service/src/main/resources/application.yml
+services/payment-service/src/test
+docs/night-runner/sprint4-context-pack.md
+EOF
+      ;;
+    ECOM-027)
+      cat <<'EOF'
+services/payment-service/src/main/java/com/kora/ecommerce/payment
+services/payment-service/src/main/resources/db/migration
+services/payment-service/src/test
+DESIGN.md
+docs/night-runner/sprint4-context-pack.md
+EOF
+      ;;
+    ECOM-028)
+      cat <<'EOF'
+docker-compose.yml
+.env.example
+infra/README.md
+infra/postgres/init/01-create-databases.sql
+services/payment-service/src/main/resources/db/migration
+docs/night-runner/sprint4-context-pack.md
+EOF
+      ;;
+    ECOM-029)
+      cat <<'EOF'
+services/order-service/pom.xml
+services/order-service/src/main/resources/application.yml
+services/order-service/src/main/java/com/kora/ecommerce/order
+services/order-service/src/main/resources/db/migration
+services/order-service/src/test
+docs/night-runner/sprint4-context-pack.md
+EOF
+      ;;
+    ECOM-030)
+      cat <<'EOF'
+services/payment-service/src/main/java/com/kora/ecommerce/payment
+services/order-service/src/main/java/com/kora/ecommerce/order
+services/payment-service/src/main/resources/application.yml
+services/order-service/src/main/resources/application.yml
+services/payment-service/src/test
+services/order-service/src/test
+docs/night-runner/sprint4-context-pack.md
 EOF
       ;;
   esac

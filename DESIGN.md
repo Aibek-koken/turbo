@@ -105,6 +105,11 @@ Initial events:
 12. Order state machine and status history.
 13. Transactional outbox and Debezium routing to Kafka.
 14. Customer-owned and operations order query APIs.
+15. Payment schema, processed-event idempotency and payment outbox.
+16. Payment `OrderCreated` Kafka consumer and pending payment creation.
+17. Mock payment provider client and terminal payment result persistence.
+18. Payment-result Debezium routing and Order Service result consumer.
+19. Retry, backoff and dead-letter handling for payment event flows.
 
 ## Current Constraints
 

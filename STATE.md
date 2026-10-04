@@ -4,6 +4,19 @@ Last updated: 2026-10-04
 
 ## Current Status
 
+Sprint 4 is prepared for overnight execution but not implemented. The Sprint 4
+night queue now contains ECOM-023 through ECOM-030, covering US-16 through
+US-20 from `ECommerce_User_Stories_6_Sprints.xlsx`: Payment Service
+persistence, `OrderCreated` consumption, processed-event idempotency, mock
+provider handling, payment result outbox events, Payment outbox CDC,
+Order Service payment-result consumption and retry/backoff/DLQ behavior. The
+new compact context pack is `docs/night-runner/sprint4-context-pack.md`, and
+the night-runner scripts now map Sprint 4 tasks to that pack. No Sprint 4
+application code has been implemented yet. A Payment Service Mockito test
+resource now matches the existing Catalog/Order test setup so the local
+`payment-test` validation mode can run on this machine's Java 21 runtime. Next
+task: ECOM-023.
+
 ECOM-022 is complete. Order Service now exposes customer-owned order query
 APIs at `GET /api/orders/customer/orders` and
 `GET /api/orders/customer/orders/{orderId}`, plus an operations support lookup
@@ -300,8 +313,21 @@ Night run target:
 1. Sprint 1 complete.
 2. Sprint 2 complete through ECOM-015.
 3. Sprint 3 is complete through ECOM-022, covering US-11 through US-15.
+4. Sprint 4 is queued as ECOM-023 through ECOM-030, covering US-16 through
+   US-20, but implementation has not started.
 
-Sprint 3 execution order:
+Sprint 4 prepared execution order:
+
+- Payment Service persistence foundation.
+- `OrderCreated` consumption and pending payment creation.
+- `processed_events` idempotency for duplicate Kafka deliveries.
+- Mock provider RestClient and provider-attempt handling.
+- `PaymentSucceeded`/`PaymentFailed` outbox persistence.
+- Payment outbox Debezium routing to `ecommerce.payment.events`.
+- Order Service consumption of payment results and status transitions.
+- Retry/backoff/dead-letter handling for payment event flows.
+
+Completed Sprint 3 execution order:
 
 - Order persistence foundation.
 - Catalog snapshot client and authenticated order creation.
@@ -310,9 +336,8 @@ Sprint 3 execution order:
 - Debezium CDC routing to `ecommerce.order.events`.
 - Customer-owned and operations order query/history APIs.
 
-Excluded from this Sprint 3 run:
+Excluded from this Sprint 4 run:
 
-- Payment consumption and payment-result handling.
 - Audit and notification flows.
 - Broad E2E/Testcontainers work.
 - CI release pipeline.
@@ -328,6 +353,15 @@ Excluded from this Sprint 3 run:
   long overnight work because it improves rollback and changed-file tracking.
 
 ## Latest Validation
+
+Sprint 4 runner preparation validation passed:
+
+```bash
+scripts/night-agent-runner.sh --agent codex --overnight --phase sprint4 --dry-run
+scripts/night-agent-status.sh
+git diff --check
+scripts/project-validate.sh payment-test
+```
 
 ECOM-022 validation passed:
 
@@ -386,12 +420,16 @@ scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-mi
 
 ## Next Command
 
-No next Sprint 3 task is queued after ECOM-022. For a future overnight
-continuation, run the night runner from the repo root after adding or selecting
-the next queued task:
+Sprint 4 is queued but not implemented. Dry-run the first task with:
 
 ```bash
-caffeinate -dimsu scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-minutes 28800
+scripts/night-agent-runner.sh --agent codex --overnight --phase sprint4 --max-minutes 28800 --dry-run
 ```
 
-Next task: none queued.
+Start the overnight Sprint 4 runner from the repo root with:
+
+```bash
+caffeinate -dimsu scripts/night-agent-runner.sh --agent codex --overnight --phase sprint4 --max-minutes 28800
+```
+
+Next task: ECOM-023.

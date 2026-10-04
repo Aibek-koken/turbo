@@ -1,70 +1,64 @@
 # Night Agent Handoff
 
-Requested phases: sprint3
-Current task: ECOM-022
-Last completed task: ECOM-022
-Last status: done
-Last log: .agent-runs/2026-10-04/ECOM-022.log
+Requested phases: sprint4
+Current task: sprint4-prep
+Last completed task: none in sprint4
+Last status: prepared
+Last log: none
 
 ## Files Changed
-- services/order-service/src/main/java/com/kora/ecommerce/order/api/CustomerOrderController.java
-- services/order-service/src/main/java/com/kora/ecommerce/order/api/OpsOrderQueryController.java
-- services/order-service/src/main/java/com/kora/ecommerce/order/api/OrderApiExceptionHandler.java
-- services/order-service/src/main/java/com/kora/ecommerce/order/api/OrderPageResponse.java
-- services/order-service/src/main/java/com/kora/ecommerce/order/api/OrderResponse.java
-- services/order-service/src/main/java/com/kora/ecommerce/order/application/OrderQueryException.java
-- services/order-service/src/main/java/com/kora/ecommerce/order/application/OrderQueryFailure.java
-- services/order-service/src/main/java/com/kora/ecommerce/order/application/OrderQueryService.java
-- services/order-service/src/main/java/com/kora/ecommerce/order/application/QueriedOrder.java
-- services/order-service/src/main/java/com/kora/ecommerce/order/application/QueriedOrderPage.java
-- services/order-service/src/main/java/com/kora/ecommerce/order/persistence/OrderItemRepository.java
-- services/order-service/src/main/java/com/kora/ecommerce/order/persistence/OrderRepository.java
-- services/order-service/src/main/java/com/kora/ecommerce/order/persistence/OrderStatusHistoryRepository.java
-- services/order-service/src/test/java/com/kora/ecommerce/order/api/OrderQueryControllerTest.java
-- services/order-service/src/test/java/com/kora/ecommerce/order/application/OrderQueryServiceTest.java
-- services/order-service/src/test/java/com/kora/ecommerce/order/persistence/OrderRepositoryTest.java
+- AGENTS.md
+- DESIGN.md
+- STATE.md
+- docs/night-runner/handoff.md
+- docs/night-runner/sprint4-context-pack.md
+- docs/night-runner/task-queue.md
+- scripts/night-agent-prompt-builder.sh
+- scripts/night-agent-runner.sh
+- scripts/night-agent-safe-approve.sh
+- scripts/night-agent-status.sh
+- scripts/project-validate.sh
+- services/payment-service/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker
 
 ## Tests Run
-scripts/project-validate.sh order-test
+Passed:
+
+```bash
+scripts/night-agent-runner.sh --agent codex --overnight --phase sprint4 --dry-run
+scripts/night-agent-status.sh
+git diff --check
+scripts/project-validate.sh payment-test
+```
 
 ## Current Status
 ```text
- M .env.example
  M AGENTS.md
+ M DESIGN.md
  M STATE.md
- M docker-compose.yml
  M docs/night-runner/handoff.md
  M docs/night-runner/task-queue.md
- M infra/README.md
- M services/order-service/src/main/java/com/kora/ecommerce/order/api/CustomerOrderController.java
- M services/order-service/src/main/java/com/kora/ecommerce/order/api/OrderApiExceptionHandler.java
- M services/order-service/src/main/java/com/kora/ecommerce/order/persistence/OrderItemRepository.java
- M services/order-service/src/main/java/com/kora/ecommerce/order/persistence/OrderRepository.java
- M services/order-service/src/main/java/com/kora/ecommerce/order/persistence/OrderStatusHistoryRepository.java
- M services/order-service/src/test/java/com/kora/ecommerce/order/persistence/OrderRepositoryTest.java
-?? infra/debezium/
-?? scripts/register-order-outbox-connector.sh
-?? scripts/verify-order-cdc.sh
-?? services/order-service/src/main/java/com/kora/ecommerce/order/api/OpsOrderQueryController.java
-?? services/order-service/src/main/java/com/kora/ecommerce/order/api/OrderPageResponse.java
-?? services/order-service/src/main/java/com/kora/ecommerce/order/api/OrderResponse.java
-?? services/order-service/src/main/java/com/kora/ecommerce/order/application/OrderQueryException.java
-?? services/order-service/src/main/java/com/kora/ecommerce/order/application/OrderQueryFailure.java
-?? services/order-service/src/main/java/com/kora/ecommerce/order/application/OrderQueryService.java
-?? services/order-service/src/main/java/com/kora/ecommerce/order/application/QueriedOrder.java
-?? services/order-service/src/main/java/com/kora/ecommerce/order/application/QueriedOrderPage.java
-?? services/order-service/src/test/java/com/kora/ecommerce/order/api/OrderQueryControllerTest.java
-?? services/order-service/src/test/java/com/kora/ecommerce/order/application/OrderQueryServiceTest.java
+ M scripts/night-agent-prompt-builder.sh
+ M scripts/night-agent-runner.sh
+ M scripts/night-agent-safe-approve.sh
+ M scripts/night-agent-status.sh
+ M scripts/project-validate.sh
+?? docs/night-runner/sprint4-context-pack.md
+?? services/payment-service/src/test/resources/
 ```
 
 ## Known Issues
-none
+Sprint 4 is prepared only. No Sprint 4 application code has been implemented
+yet.
 
 ## Next Task
-none
+ECOM-023
 
 ## Exact Next Agent Prompt
-No pending task.
+Generate with:
+
+```bash
+scripts/night-agent-prompt-builder.sh ECOM-023
+```
 
 ## Protected Files Reminder
 
