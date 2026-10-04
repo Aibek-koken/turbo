@@ -640,10 +640,10 @@ Validation:
 - `scripts/project-validate.sh order-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-023 phase=sprint4 status=pending -->
+<!-- task:id=ECOM-023 phase=sprint4 status=done -->
 ## ECOM-023: Add Payment Service persistence foundation
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-16 Consume OrderCreatedEvent & Create Payment
@@ -671,10 +671,10 @@ Validation:
 - `scripts/project-validate.sh payment-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-024 phase=sprint4 status=pending -->
+<!-- task:id=ECOM-024 phase=sprint4 status=done -->
 ## ECOM-024: Consume OrderCreated and create pending payments
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-16 Consume OrderCreatedEvent & Create Payment
@@ -700,10 +700,10 @@ Validation:
 - `scripts/project-validate.sh payment-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-025 phase=sprint4 status=pending -->
+<!-- task:id=ECOM-025 phase=sprint4 status=done -->
 ## ECOM-025: Add idempotent OrderCreated event processing
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-17 Idempotent Payment Event Processing
@@ -727,10 +727,10 @@ Validation:
 - `scripts/project-validate.sh payment-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-026 phase=sprint4 status=pending -->
+<!-- task:id=ECOM-026 phase=sprint4 status=done -->
 ## ECOM-026: Add mock payment provider client and attempt handling
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-18 Mock Payment Provider via RestClient
@@ -756,10 +756,10 @@ Validation:
 - `scripts/project-validate.sh payment-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-027 phase=sprint4 status=pending -->
+<!-- task:id=ECOM-027 phase=sprint4 status=done -->
 ## ECOM-027: Persist payment result events through the outbox
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-19 Payment Result Events & Order Update
@@ -783,10 +783,10 @@ Validation:
 - `scripts/project-validate.sh payment-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-028 phase=sprint4 status=pending -->
+<!-- task:id=ECOM-028 phase=sprint4 status=done -->
 ## ECOM-028: Route Payment outbox events through Debezium and Kafka
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-19 Payment Result Events & Order Update
@@ -816,10 +816,10 @@ Validation:
 - `scripts/project-validate.sh payment-cdc-config`
 <!-- /task -->
 
-<!-- task:id=ECOM-029 phase=sprint4 status=pending -->
+<!-- task:id=ECOM-029 phase=sprint4 status=done -->
 ## ECOM-029: Consume payment result events in Order Service
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-19 Payment Result Events & Order Update
@@ -845,10 +845,10 @@ Validation:
 - `scripts/project-validate.sh order-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-030 phase=sprint4 status=pending -->
+<!-- task:id=ECOM-030 phase=sprint4 status=done -->
 ## ECOM-030: Add retry, backoff and dead-letter handling
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-20 Retry, Backoff & Dead-Letter Handling

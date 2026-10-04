@@ -72,3 +72,36 @@ scripts/verify-order-cdc.sh
 The smoke helper inserts one synthetic outbox row and looks for its event ID and
 aggregate ID on `ecommerce.order.events`. It does not delete or truncate any
 existing data.
+
+## Payment Outbox CDC
+
+The Payment Service outbox connector lives at
+`infra/debezium/payment-outbox-connector.json`. It captures only
+`payments.public.outbox_events`, routes records to `ecommerce.payment.events`,
+uses `aggregate_id` as the Kafka key and emits the stored `payload` JSON as the
+Kafka value. That payload is the complete versioned `PaymentSucceeded` or
+`PaymentFailed` event envelope produced by the Payment Service.
+
+Local connector credentials and logical-replication names are placeholders in
+`.env.example`. Copy them to `.env` for local overrides; do not store real
+credentials in the repository.
+
+```bash
+docker compose up -d postgres kafka debezium-connect
+scripts/register-payment-outbox-connector.sh
+curl -fsS http://localhost:${DEBEZIUM_CONNECT_PORT:-8086}/connectors/ecommerce-payment-outbox-v1/status | jq .
+docker compose exec kafka kafka-topics.sh --bootstrap-server kafka:9092 --list
+docker compose exec kafka kafka-topics.sh --bootstrap-server kafka:9092 --describe --topic ecommerce.payment.events
+docker compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic ecommerce.payment.events --from-beginning --max-messages 5 --property print.key=true --property key.separator='|'
+```
+
+For a bounded local smoke check, make sure the Payment schema has been migrated
+in the local `payments` database, then run:
+
+```bash
+scripts/verify-payment-cdc.sh
+```
+
+The smoke helper inserts one synthetic payment result outbox row and looks for
+its event ID and order ID on `ecommerce.payment.events`. It does not delete or
+truncate any existing data.

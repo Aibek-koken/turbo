@@ -6,6 +6,9 @@ spring:
     driver-class-name: org.h2.Driver
   flyway:
     enabled: true
+  kafka:
+    listener:
+      auto-startup: false
   jpa:
     hibernate:
       ddl-auto: validate
@@ -14,3 +17,7 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC
+
+order:
+  payment-results:
+    consumer-enabled: false

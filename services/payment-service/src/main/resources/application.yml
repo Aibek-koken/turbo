@@ -1,6 +1,32 @@
 spring:
   application:
     name: payment-service
+  datasource:
+    url: ${PAYMENT_SERVICE_DATASOURCE_URL:jdbc:postgresql://localhost:5432/payments}
+    username: ${PAYMENT_SERVICE_DATASOURCE_USERNAME:ecommerce}
+    password: ${PAYMENT_SERVICE_DATASOURCE_PASSWORD:change-me-local-postgres}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      ack-mode: record
   security:
     oauth2:
       resourceserver:
@@ -10,6 +36,23 @@ spring:
 
 server:
   port: 8083
+
+payment:
+  kafka:
+    order-created:
+      topic: ${PAYMENT_SERVICE_ORDER_CREATED_TOPIC:ecommerce.order.events}
+      group-id: ${PAYMENT_SERVICE_ORDER_CREATED_GROUP_ID:payment-service.order-created.v1}
+      enabled: ${PAYMENT_SERVICE_ORDER_CREATED_CONSUMER_ENABLED:true}
+      retry:
+        max-attempts: ${PAYMENT_SERVICE_ORDER_CREATED_RETRY_MAX_ATTEMPTS:3}
+        backoff: ${PAYMENT_SERVICE_ORDER_CREATED_RETRY_BACKOFF:PT1S}
+        dead-letter-topic: ${PAYMENT_SERVICE_ORDER_CREATED_DLT_TOPIC:ecommerce.order.events.DLT}
+  provider:
+    mock:
+      base-url: ${PAYMENT_SERVICE_MOCK_PROVIDER_BASE_URL:http://localhost:8089}
+      authorize-path: ${PAYMENT_SERVICE_MOCK_PROVIDER_AUTHORIZE_PATH:/api/mock-payments/authorize}
+      connect-timeout: ${PAYMENT_SERVICE_MOCK_PROVIDER_CONNECT_TIMEOUT:PT2S}
+      read-timeout: ${PAYMENT_SERVICE_MOCK_PROVIDER_READ_TIMEOUT:PT3S}
 
 management:
   endpoints:

@@ -16,10 +16,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 @AutoConfigureMockMvc
 @SpringBootTest
+@ActiveProfiles("test")
 class PaymentSecurityConfigurationTest {
 
     @Autowired

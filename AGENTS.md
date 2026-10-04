@@ -52,9 +52,9 @@ insufficient. They are source documents, not working memory.
 ## Managed Status
 
 <!-- night-agent-runner:start -->
-- Last update: 2026-10-04T10:34:51Z
-- Last task: sprint4-prep
-- Last status: prepared
-- Next task: ECOM-023
-- Last log: none
+- Last update: 2026-10-04T17:19:17Z
+- Last task: ECOM-030
+- Last status: done
+- Next task: none
+- Last log: .agent-runs/2026-10-04/ECOM-030.log
 <!-- night-agent-runner:end -->

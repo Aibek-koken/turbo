@@ -35,10 +35,10 @@ class OrderMigrationTest {
 
     @Test
     void flywayAppliesInitialOrderSchema() {
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("1");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
 
         assertThat(tableNames())
-                .contains("orders", "order_items", "order_status_history", "outbox_events");
+                .contains("orders", "order_items", "order_status_history", "outbox_events", "processed_events");
     }
 
     @Test
@@ -51,6 +51,8 @@ class OrderMigrationTest {
                 .contains("idx_order_status_history_order_changed_at");
         assertThat(indexNames("outbox_events"))
                 .contains("idx_outbox_events_aggregate", "idx_outbox_events_event_type_occurred_at");
+        assertThat(indexNames("processed_events"))
+                .contains("idx_processed_events_aggregate", "idx_processed_events_payment");
 
         assertThat(importedKeyNames("order_items")).contains("fk_order_items_order");
         assertThat(importedKeyNames("order_status_history")).contains("fk_order_status_history_order");

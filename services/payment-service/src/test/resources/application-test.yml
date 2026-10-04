@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:payment_service;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;INIT=CREATE DOMAIN IF NOT EXISTS JSONB AS JSON;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  kafka:
+    bootstrap-servers: localhost:19092
+
+payment:
+  kafka:
+    order-created:
+      enabled: false

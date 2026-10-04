@@ -1,64 +1,73 @@
 # Night Agent Handoff
 
 Requested phases: sprint4
-Current task: sprint4-prep
-Last completed task: none in sprint4
-Last status: prepared
-Last log: none
+Current task: ECOM-030
+Last completed task: ECOM-030
+Last status: done
+Last log: .agent-runs/2026-10-04/ECOM-030.log
 
 ## Files Changed
-- AGENTS.md
-- DESIGN.md
-- STATE.md
-- docs/night-runner/handoff.md
-- docs/night-runner/sprint4-context-pack.md
-- docs/night-runner/task-queue.md
-- scripts/night-agent-prompt-builder.sh
-- scripts/night-agent-runner.sh
-- scripts/night-agent-safe-approve.sh
-- scripts/night-agent-status.sh
-- scripts/project-validate.sh
-- services/payment-service/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker
+- services/order-service/src/main/java/com/kora/ecommerce/order/config/OrderPaymentResultConsumerProperties.java
+- services/order-service/src/test/java/com/kora/ecommerce/order/config/OrderKafkaConfigurationTest.java
+- services/payment-service/src/main/java/com/kora/ecommerce/payment/config/PaymentOrderCreatedConsumerProperties.java
+- services/payment-service/src/main/java/com/kora/ecommerce/payment/messaging/RetryableOrderCreatedEventException.java
+- services/payment-service/src/test/java/com/kora/ecommerce/payment/config/PaymentKafkaConsumerConfigurationTest.java
 
 ## Tests Run
-Passed:
-
-```bash
-scripts/night-agent-runner.sh --agent codex --overnight --phase sprint4 --dry-run
-scripts/night-agent-status.sh
-git diff --check
-scripts/project-validate.sh payment-test
-```
+scripts/project-validate.sh payment-test; scripts/project-validate.sh order-test
 
 ## Current Status
 ```text
+ M .env.example
  M AGENTS.md
- M DESIGN.md
  M STATE.md
+ M docker-compose.yml
  M docs/night-runner/handoff.md
  M docs/night-runner/task-queue.md
- M scripts/night-agent-prompt-builder.sh
- M scripts/night-agent-runner.sh
- M scripts/night-agent-safe-approve.sh
- M scripts/night-agent-status.sh
- M scripts/project-validate.sh
-?? docs/night-runner/sprint4-context-pack.md
-?? services/payment-service/src/test/resources/
+ M infra/README.md
+ M services/order-service/pom.xml
+ M services/order-service/src/main/resources/application.yml
+ M services/order-service/src/test/java/com/kora/ecommerce/order/persistence/OrderMigrationTest.java
+ M services/order-service/src/test/resources/application-test.yml
+ M services/payment-service/pom.xml
+ M services/payment-service/src/main/resources/application.yml
+ M services/payment-service/src/test/java/com/kora/ecommerce/payment/security/PaymentSecurityConfigurationTest.java
+?? infra/debezium/payment-outbox-connector.json
+?? scripts/register-payment-outbox-connector.sh
+?? scripts/verify-payment-cdc.sh
+?? services/order-service/src/main/java/com/kora/ecommerce/order/application/payment/
+?? services/order-service/src/main/java/com/kora/ecommerce/order/config/OrderKafkaConfiguration.java
+?? services/order-service/src/main/java/com/kora/ecommerce/order/config/OrderPaymentResultConsumerProperties.java
+?? services/order-service/src/main/java/com/kora/ecommerce/order/persistence/ProcessedPaymentEventEntity.java
+?? services/order-service/src/main/java/com/kora/ecommerce/order/persistence/ProcessedPaymentEventId.java
+?? services/order-service/src/main/java/com/kora/ecommerce/order/persistence/ProcessedPaymentEventRepository.java
+?? services/order-service/src/main/resources/db/migration/V2__create_order_processed_events.sql
+?? services/order-service/src/test/java/com/kora/ecommerce/order/application/payment/
+?? services/order-service/src/test/java/com/kora/ecommerce/order/config/
+?? services/payment-service/src/main/java/com/kora/ecommerce/payment/application/
+?? services/payment-service/src/main/java/com/kora/ecommerce/payment/config/
+?? services/payment-service/src/main/java/com/kora/ecommerce/payment/messaging/
+?? services/payment-service/src/main/java/com/kora/ecommerce/payment/order/
+?? services/payment-service/src/main/java/com/kora/ecommerce/payment/persistence/
+?? services/payment-service/src/main/java/com/kora/ecommerce/payment/provider/
+?? services/payment-service/src/main/resources/db/
+?? services/payment-service/src/test/java/com/kora/ecommerce/payment/application/
+?? services/payment-service/src/test/java/com/kora/ecommerce/payment/config/
+?? services/payment-service/src/test/java/com/kora/ecommerce/payment/messaging/
+?? services/payment-service/src/test/java/com/kora/ecommerce/payment/order/
+?? services/payment-service/src/test/java/com/kora/ecommerce/payment/persistence/
+?? services/payment-service/src/test/java/com/kora/ecommerce/payment/provider/
+?? services/payment-service/src/test/resources/application-test.yml
 ```
 
 ## Known Issues
-Sprint 4 is prepared only. No Sprint 4 application code has been implemented
-yet.
+none
 
 ## Next Task
-ECOM-023
+none
 
 ## Exact Next Agent Prompt
-Generate with:
-
-```bash
-scripts/night-agent-prompt-builder.sh ECOM-023
-```
+No pending task.
 
 ## Protected Files Reminder
 

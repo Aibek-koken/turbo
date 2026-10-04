@@ -4,18 +4,145 @@ Last updated: 2026-10-04
 
 ## Current Status
 
-Sprint 4 is prepared for overnight execution but not implemented. The Sprint 4
-night queue now contains ECOM-023 through ECOM-030, covering US-16 through
-US-20 from `ECommerce_User_Stories_6_Sprints.xlsx`: Payment Service
-persistence, `OrderCreated` consumption, processed-event idempotency, mock
-provider handling, payment result outbox events, Payment outbox CDC,
-Order Service payment-result consumption and retry/backoff/DLQ behavior. The
-new compact context pack is `docs/night-runner/sprint4-context-pack.md`, and
-the night-runner scripts now map Sprint 4 tasks to that pack. No Sprint 4
-application code has been implemented yet. A Payment Service Mockito test
-resource now matches the existing Catalog/Order test setup so the local
-`payment-test` validation mode can run on this machine's Java 21 runtime. Next
-task: ECOM-023.
+ECOM-030 is complete. Payment Service now has environment-driven bounded retry,
+backoff and dead-letter settings for `OrderCreated` consumption, including a
+Spring Kafka `DefaultErrorHandler`, configured DLT destination and string
+producer serializers for local DLT publication. Malformed `OrderCreated`
+payloads are rethrown after structured rejection logging and classified as
+non-retryable so they route to DLT without repeated retries. Retryable provider
+timeout/5xx outcomes now clear the temporary processed-event claim before the
+transaction commits, allowing Kafka redelivery to retry provider authorization
+against the existing pending payment instead of creating a duplicate payment;
+terminal success/failure keeps the processed marker and duplicate replay skips
+without another provider call. Order Service now has the same environment-driven
+bounded retry/backoff/DLT configuration for payment-result consumption.
+Malformed payment-result payloads are classified as non-retryable for DLT
+routing, while transient updater/database failures remain retryable. Order
+payment-result idempotency now uses the configured consumer group ID as its
+consumer name, keeping replay markers aligned with the listener configuration.
+Focused listener, configuration and replay tests cover retryable provider
+failures, poison payload propagation to the error handler, DLT destination
+routing, bounded retry properties and duplicate replay idempotency. Validation
+passed: `scripts/project-validate.sh payment-test` and
+`scripts/project-validate.sh order-test`. Next task: none queued.
+
+ECOM-029 is complete. Order Service now consumes versioned payment result
+events from `ecommerce.payment.events` through Spring Kafka string consumer
+configuration with environment-driven topic, group ID and listener enablement
+placeholders. The Order-owned payment result contracts parse and validate
+`PaymentSucceeded` and `PaymentFailed` envelopes, including event type,
+version, event ID, aggregate/order ID consistency, occurred time and payment
+ID. Malformed payloads are rejected in the listener without writing partial
+state. Order persistence now has an Order-owned `processed_events` marker
+table and JPA repository keyed by `(consumer_name, event_id)`. Valid result
+events are handled transactionally: the marker is claimed in the same
+transaction as the status update or stable skip, matching orders transition to
+`PAID` or `PAYMENT_FAILED` through the existing state machine/history model,
+and orders still in `CREATED` first move through `PAYMENT_PENDING` so history
+remains complete. Duplicate result events are acknowledged/skipped without
+extra history rows; missing orders, already-terminal orders and invalid
+transitions return stable skip results without exposing persistence internals.
+Focused parser, listener, migration and updater tests cover success, failure,
+duplicate events, CREATED-to-terminal progression, malformed payloads, missing
+orders and invalid transitions. Validation passed:
+`scripts/project-validate.sh order-test`. Next task: ECOM-030.
+
+ECOM-028 is complete. Payment Service outbox events now have a dedicated
+versioned Debezium PostgreSQL connector definition at
+`infra/debezium/payment-outbox-connector.json`. The connector captures only
+`payments.public.outbox_events`, routes through the outbox event router to
+`ecommerce.payment.events`, uses `aggregate_id`/order ID as the Kafka key and
+emits the stored JSON `payload` as the complete versioned
+`PaymentSucceeded`/`PaymentFailed` event envelope. Docker Compose and
+`.env.example` now include local placeholder Debezium logical-replication
+settings for the Payment database, slot, publication and topic prefix. Local
+helpers now support idempotent connector registration and a bounded CDC smoke
+check that inserts one synthetic payment result outbox row and verifies the
+event ID plus order ID on the expected Kafka topic without deleting existing
+data. The infrastructure runbook documents connector registration, status,
+topic inspection and smoke-test commands. Validation passed:
+`scripts/project-validate.sh payment-test` and
+`scripts/project-validate.sh payment-cdc-config`. Next task: ECOM-029.
+
+ECOM-027 is complete. Payment Service now persists terminal
+`PaymentSucceeded` and `PaymentFailed` result events through the Payment-owned
+outbox. The result event factory builds deterministic version-1 envelopes from
+scalar payment and attempt values, including event ID, event type/version,
+aggregate/order ID, occurred time, trace ID, correlation ID and result data
+with payment ID, customer ID, amount, currency, payment status, provider
+attempt ID/outcome, provider reference or safe failure reason, and the original
+`OrderCreated` event ID. The same transactional `OrderCreated` processing flow
+marks the payment terminal, records the provider attempt outcome and appends
+one outbox row for successful, declined or malformed terminal provider results;
+timeout and provider-5xx attempts remain pending for retry/DLQ work and emit no
+result event. No direct Kafka publishing, after-commit insert or second
+transaction was added. Focused integration tests cover committed success,
+decline and malformed-result event envelopes, duplicate delivery without a
+second event, retryable outcomes without events and rollback of payment,
+attempt, processed-event and outbox rows. Validation passed:
+`scripts/project-validate.sh payment-test`. Next task: ECOM-028.
+
+ECOM-026 is complete. Payment Service now has a local mock payment provider
+client backed by Spring `RestClient`, with environment-driven base URL,
+authorize path, connect timeout and read timeout placeholders. The
+`OrderCreated` application flow remains idempotency-gated: only the first
+claimed event that creates a new pending payment creates a provider attempt and
+calls the provider; duplicate events and already-existing payments do not make
+another provider call. Provider attempts now persist a normalized outcome
+(`SUCCEEDED`, `DECLINED`, `TIMED_OUT`, `PROVIDER_5XX` or
+`MALFORMED_RESPONSE`) alongside the coarse attempt status. Approved provider
+responses mark the payment `SUCCEEDED` with a provider reference, declines and
+malformed provider responses mark the payment `FAILED` with safe failure
+reasons, and timeout/5xx outcomes persist failed attempt records while leaving
+the payment `PENDING` for the later retry/DLQ task. No
+`PaymentSucceeded`/`PaymentFailed` outbox events are emitted yet. Focused
+provider-client and application tests cover approved, declined, timeout, 5xx,
+malformed provider response and duplicate/concurrent duplicate delivery paths.
+Validation passed: `scripts/project-validate.sh payment-test`. Next task:
+ECOM-027.
+
+ECOM-025 is complete. Payment Service now processes valid `OrderCreated`
+events idempotently by claiming `(consumer_name, event_id)` in the
+`processed_events` table before creating a payment. The claim and the payment
+creation, duplicate skip, or existing-payment skip all execute through the same
+application transaction, with PostgreSQL using `ON CONFLICT DO NOTHING` and H2
+test runs using an equivalent deterministic claim path. Duplicate and
+concurrent duplicate deliveries of the same valid event now create one
+`PENDING` payment, one processed-event marker and no provider attempts.
+Malformed payloads are still rejected in the listener before the application
+service, so no processed-event marker is written for bad messages. Focused
+service and listener tests cover first delivery, sequential duplicate,
+concurrent duplicate and malformed payload paths. Validation passed:
+`scripts/project-validate.sh payment-test`. Next task: ECOM-026.
+
+ECOM-024 is complete. Payment Service now consumes `OrderCreated` messages from
+`ecommerce.order.events` through Spring Kafka string consumer configuration and
+a Payment-owned versioned envelope parser. The parser validates malformed,
+unsupported and incomplete payloads before persistence, including event type,
+version, event/aggregate/order IDs, `CREATED` status, customer ID,
+positive `NUMERIC(19,4)` total amount and uppercase three-letter currency. A
+Kafka listener logs rejected records with structured metadata and creates no
+partial records; valid events flow into a transactional application service
+that persists one `PENDING` payment with order ID, string customer ID, amount,
+currency and source event ID. Payment customer IDs now match the Order-owned
+JWT subject contract as `VARCHAR(128)` instead of UUID. Provider calls and
+duplicate-delivery idempotency remain deferred to later Sprint 4 tasks.
+Focused parser, listener and application tests were added. Validation passed:
+`scripts/project-validate.sh payment-test`. Next task: ECOM-025.
+
+ECOM-023 is complete. Payment Service now has its persistence foundation:
+Spring Data JPA, Flyway, PostgreSQL runtime wiring, H2 test support, local
+`payments` database configuration, and a versioned schema for `payments`,
+`payment_attempts`, `processed_events` and `outbox_events`. The Payment-owned
+JPA entities and repositories model UUID identifiers, order/customer references
+from events, `PENDING`/`SUCCEEDED`/`FAILED` status, `NUMERIC(19,4)` money,
+three-letter uppercase currency constraints, provider references, event
+metadata, UTC `Instant` timestamps, optimistic locking on mutable payments,
+processed-event idempotency keys and read-oriented indexes. Repository and
+migration tests cover uniqueness, constraints, processed-event idempotency and
+outbox payload persistence without adding Kafka listeners, provider calls or
+event production. Validation passed: `scripts/project-validate.sh payment-test`.
+ECOM-024 followed this task.
 
 ECOM-022 is complete. Order Service now exposes customer-owned order query
 APIs at `GET /api/orders/customer/orders` and
@@ -313,19 +440,23 @@ Night run target:
 1. Sprint 1 complete.
 2. Sprint 2 complete through ECOM-015.
 3. Sprint 3 is complete through ECOM-022, covering US-11 through US-15.
-4. Sprint 4 is queued as ECOM-023 through ECOM-030, covering US-16 through
-   US-20, but implementation has not started.
+4. Sprint 4 is complete through ECOM-030, covering the Payment persistence
+   foundation, `OrderCreated` consumption, idempotent duplicate handling, mock
+   provider attempts, terminal payment-result outbox persistence, Debezium
+   routing for payment result events and Order Service consumption/status
+   updates plus bounded retry/backoff/dead-letter handling for both payment
+   event consumers. No further Sprint 4 task is queued.
 
 Sprint 4 prepared execution order:
 
-- Payment Service persistence foundation.
-- `OrderCreated` consumption and pending payment creation.
-- `processed_events` idempotency for duplicate Kafka deliveries.
-- Mock provider RestClient and provider-attempt handling.
-- `PaymentSucceeded`/`PaymentFailed` outbox persistence.
-- Payment outbox Debezium routing to `ecommerce.payment.events`.
-- Order Service consumption of payment results and status transitions.
-- Retry/backoff/dead-letter handling for payment event flows.
+- Payment Service persistence foundation. (complete)
+- `OrderCreated` consumption and pending payment creation. (complete)
+- `processed_events` idempotency for duplicate Kafka deliveries. (complete)
+- Mock provider RestClient and provider-attempt handling. (complete)
+- `PaymentSucceeded`/`PaymentFailed` outbox persistence. (complete)
+- Payment outbox Debezium routing to `ecommerce.payment.events`. (complete)
+- Order Service consumption of payment results and status transitions. (complete)
+- Retry/backoff/dead-letter handling for payment event flows. (complete)
 
 Completed Sprint 3 execution order:
 
@@ -353,6 +484,38 @@ Excluded from this Sprint 4 run:
   long overnight work because it improves rollback and changed-file tracking.
 
 ## Latest Validation
+
+ECOM-030 validation passed:
+
+```bash
+scripts/project-validate.sh payment-test
+scripts/project-validate.sh order-test
+```
+
+ECOM-029 validation passed:
+
+```bash
+scripts/project-validate.sh order-test
+```
+
+ECOM-028 validation passed:
+
+```bash
+scripts/project-validate.sh payment-test
+scripts/project-validate.sh payment-cdc-config
+```
+
+ECOM-027 validation passed:
+
+```bash
+scripts/project-validate.sh payment-test
+```
+
+ECOM-025 validation passed:
+
+```bash
+scripts/project-validate.sh payment-test
+```
 
 Sprint 4 runner preparation validation passed:
 
@@ -420,7 +583,7 @@ scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-mi
 
 ## Next Command
 
-Sprint 4 is queued but not implemented. Dry-run the first task with:
+Continue Sprint 4 with the next queued task, ECOM-030. Dry-run the runner with:
 
 ```bash
 scripts/night-agent-runner.sh --agent codex --overnight --phase sprint4 --max-minutes 28800 --dry-run
@@ -432,4 +595,4 @@ Start the overnight Sprint 4 runner from the repo root with:
 caffeinate -dimsu scripts/night-agent-runner.sh --agent codex --overnight --phase sprint4 --max-minutes 28800
 ```
 
-Next task: ECOM-023.
+Next task: ECOM-030.
