@@ -1,6 +1,21 @@
 spring:
   application:
     name: order-service
+  datasource:
+    url: ${ORDER_SERVICE_DATASOURCE_URL:jdbc:postgresql://localhost:5432/orders}
+    username: ${ORDER_SERVICE_DATASOURCE_USERNAME:${POSTGRES_USER:ecommerce}}
+    password: ${ORDER_SERVICE_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD:change-me-local-postgres}}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
   security:
     oauth2:
       resourceserver:
@@ -10,6 +25,10 @@ spring:
 
 server:
   port: 8082
+
+order:
+  catalog:
+    base-url: ${ORDER_SERVICE_CATALOG_BASE_URL:http://localhost:8081}
 
 management:
   endpoints:
