@@ -578,10 +578,10 @@ Validation:
 - `scripts/project-validate.sh order-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-021 phase=sprint3 status=pending -->
+<!-- task:id=ECOM-021 phase=sprint3 status=done -->
 ## ECOM-021: Route Order outbox events through Debezium and Kafka
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-14 Debezium CDC to Kafka
@@ -611,10 +611,10 @@ Validation:
 - `scripts/project-validate.sh order-cdc-config`
 <!-- /task -->
 
-<!-- task:id=ECOM-022 phase=sprint3 status=pending -->
+<!-- task:id=ECOM-022 phase=sprint3 status=done -->
 ## ECOM-022: Add customer order queries and operations history
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-15 Order Query & History API

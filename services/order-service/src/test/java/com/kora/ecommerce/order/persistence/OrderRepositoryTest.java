@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -29,6 +31,9 @@ class OrderRepositoryTest {
 
     @Autowired
     private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private OrderStatusHistoryRepository orderStatusHistoryRepository;
 
     @Autowired
     private OutboxEventRepository outboxEventRepository;
@@ -102,6 +107,41 @@ class OrderRepositoryTest {
     }
 
     @Test
+    void findsCustomerOrdersWithDeterministicPagingAndBulkChildren() {
+        UUID firstOrderId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        UUID secondOrderId = UUID.fromString("00000000-0000-0000-0000-000000000002");
+        UUID otherCustomerOrderId = UUID.fromString("00000000-0000-0000-0000-000000000003");
+        persistOrder(firstOrderId, "customer-123", NOW, "10.0000");
+        persistOrder(secondOrderId, "customer-123", NOW, "20.0000");
+        persistOrder(otherCustomerOrderId, "customer-999", NOW.plusSeconds(60), "30.0000");
+        entityManager.clear();
+
+        Page<OrderEntity> page = orderRepository.findByCustomerIdOrderByCreatedAtDescIdDesc(
+                "customer-123",
+                PageRequest.of(0, 1));
+
+        assertThat(page.getTotalElements()).isEqualTo(2);
+        assertThat(page.getContent())
+                .extracting(OrderEntity::getId)
+                .containsExactly(secondOrderId);
+
+        assertThat(orderItemRepository.findForOrdersOrdered(page.getContent().stream()
+                .map(OrderEntity::getId)
+                .toList()))
+                .singleElement()
+                .satisfies(item -> {
+                    assertThat(item.getOrder().getId()).isEqualTo(secondOrderId);
+                    assertThat(item.getItemNumber()).isEqualTo(1);
+                    assertThat(item.getProductSku()).isEqualTo("SKU-0002");
+                });
+        assertThat(orderStatusHistoryRepository.findForOrdersOrdered(page.getContent().stream()
+                .map(OrderEntity::getId)
+                .toList()))
+                .extracting(OrderStatusHistoryEntity::getStatus)
+                .containsExactly(OrderStatus.CREATED);
+    }
+
+    @Test
     void rejectsDuplicateProductSnapshotsWithinOneOrder() {
         UUID productId = UUID.randomUUID();
         OrderEntity order = validOrder(UUID.randomUUID());
@@ -154,6 +194,29 @@ class OrderRepositoryTest {
                 new BigDecimal("25.0000"),
                 "USD",
                 NOW);
+    }
+
+    private void persistOrder(UUID orderId, String customerId, Instant createdAt, String totalAmount) {
+        OrderEntity order = OrderEntity.create(
+                orderId,
+                customerId,
+                new BigDecimal(totalAmount),
+                new BigDecimal(totalAmount),
+                "USD",
+                createdAt);
+        String suffix = orderId.toString().substring(orderId.toString().length() - 4);
+        order.addItem(OrderItemEntity.snapshot(
+                UUID.randomUUID(),
+                1,
+                UUID.randomUUID(),
+                "SKU-" + suffix,
+                "Snapshot Product " + suffix,
+                1,
+                new BigDecimal(totalAmount),
+                "USD",
+                new BigDecimal(totalAmount)));
+        order.appendStatusHistory(OrderStatus.CREATED, createdAt, "order created");
+        orderRepository.saveAndFlush(order);
     }
 
     private static OrderItemEntity validItem(int itemNumber, UUID productId) {

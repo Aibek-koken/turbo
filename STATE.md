@@ -1,8 +1,40 @@
 # Project State
 
-Last updated: 2026-10-03
+Last updated: 2026-10-04
 
 ## Current Status
+
+ECOM-022 is complete. Order Service now exposes customer-owned order query
+APIs at `GET /api/orders/customer/orders` and
+`GET /api/orders/customer/orders/{orderId}`, plus an operations support lookup
+at `GET /api/orders/ops/orders/{orderId}`. Customer list pagination is bounded
+and deterministic by `created_at DESC, id DESC`, ownership comes only from the
+JWT subject, and non-owned customer detail uses the same stable not-found
+Problem Details response as a missing order. Query responses include immutable
+item snapshots, subtotal/total/currency, current status, timestamps and
+chronologically ordered status history. The query service hydrates page results
+with focused bulk item/history repository queries instead of per-order child
+loads. Repository, service and MockMvc tests cover ownership isolation,
+operations access, response shape, pagination bounds and history ordering.
+Validation passed: `scripts/project-validate.sh order-test`. Next task: none
+queued in the current Sprint 3 task queue.
+
+ECOM-021 is complete. The repository now includes a versioned Debezium
+PostgreSQL connector definition for the Order Service outbox table at
+`infra/debezium/order-outbox-connector.json`. The connector captures only
+`public.outbox_events` from the `orders` database, uses the outbox event router
+to publish to `ecommerce.order.events`, keys messages by `aggregate_id` and
+emits the stored JSON `payload` as the complete versioned event envelope.
+Docker Compose wires local placeholder environment variables for Debezium
+logical replication credentials, slot and publication names through Kafka
+Connect's env config provider. Local helpers now support idempotent connector
+registration and a bounded CDC smoke check that inserts one synthetic outbox
+row and verifies its event ID and aggregate ID on the expected Kafka topic
+without deleting existing data. The local infrastructure runbook documents
+registration, connector status, topic inspection and smoke-test commands.
+Validation passed:
+`scripts/project-validate.sh order-test` and
+`scripts/project-validate.sh order-cdc-config`.
 
 ECOM-020 is complete. Order creation now persists a versioned `OrderCreated`
 outbox event in the same Spring transaction as the order aggregate, items and
@@ -267,8 +299,7 @@ Night run target:
 
 1. Sprint 1 complete.
 2. Sprint 2 complete through ECOM-015.
-3. Sprint 3 is in progress. ECOM-016 through ECOM-020 are complete; ECOM-021 through ECOM-022
-   remain queued, covering US-11 through US-15.
+3. Sprint 3 is complete through ECOM-022, covering US-11 through US-15.
 
 Sprint 3 execution order:
 
@@ -297,6 +328,12 @@ Excluded from this Sprint 3 run:
   long overnight work because it improves rollback and changed-file tracking.
 
 ## Latest Validation
+
+ECOM-022 validation passed:
+
+```bash
+scripts/project-validate.sh order-test
+```
 
 ECOM-018 validation passed:
 
@@ -349,16 +386,12 @@ scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-mi
 
 ## Next Command
 
-Continue the Sprint 3 queue with the next task only:
-
-```bash
-scripts/night-agent-prompt-builder.sh ECOM-019
-```
-
-For an overnight continuation, run the Sprint 3 runner from the repo root:
+No next Sprint 3 task is queued after ECOM-022. For a future overnight
+continuation, run the night runner from the repo root after adding or selecting
+the next queued task:
 
 ```bash
 caffeinate -dimsu scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-minutes 28800
 ```
 
-Next task: ECOM-019.
+Next task: none queued.

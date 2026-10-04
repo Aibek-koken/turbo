@@ -1,12 +1,14 @@
 package com.kora.ecommerce.order.api;
 
 import com.kora.ecommerce.order.application.OrderCreationException;
+import com.kora.ecommerce.order.application.OrderQueryException;
 import com.kora.ecommerce.order.application.OrderTransitionException;
 import com.kora.ecommerce.order.catalog.ProductSnapshotResolutionException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -28,6 +30,32 @@ public class OrderApiExceptionHandler {
             problem.setProperty("maxAllowed", exception.maxAllowed());
         }
         return ResponseEntity.status(exception.apiStatus()).body(problem);
+    }
+
+    @ExceptionHandler(OrderQueryException.class)
+    public ResponseEntity<ProblemDetail> handleOrderQuery(OrderQueryException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(exception.apiStatus(), exception.getMessage());
+        problem.setTitle("Order lookup failed");
+        problem.setProperty("failure", exception.failure().name());
+        if (exception.orderId() != null) {
+            problem.setProperty("orderId", exception.orderId());
+        }
+        if (exception.maxAllowed() != null) {
+            problem.setProperty("maxAllowed", exception.maxAllowed());
+        }
+        return ResponseEntity.status(exception.apiStatus()).body(problem);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ProblemDetail> handleArgumentTypeMismatch(MethodArgumentTypeMismatchException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                org.springframework.http.HttpStatus.BAD_REQUEST,
+                "Request parameter or path variable has an invalid value.");
+        problem.setTitle("Invalid request parameter");
+        if (exception.getName() != null) {
+            problem.setProperty("parameter", exception.getName());
+        }
+        return ResponseEntity.badRequest().body(problem);
     }
 
     @ExceptionHandler(ProductSnapshotResolutionException.class)

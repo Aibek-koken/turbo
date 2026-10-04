@@ -39,3 +39,36 @@ Debezium tasks and initializes local databases named `catalog`, `orders`,
 Keycloak imports `infra/keycloak/ecommerce-realm.json` on startup. The imported
 realm defines local testing clients and the `CUSTOMER`, `CATALOG_ADMIN` and
 `OPS_ADMIN` realm roles.
+
+## Order Outbox CDC
+
+The Order Service outbox connector lives at
+`infra/debezium/order-outbox-connector.json`. It captures only
+`orders.public.outbox_events`, routes records to `ecommerce.order.events`, uses
+`aggregate_id` as the Kafka key and emits the `payload` JSON as the Kafka value.
+That payload is the complete versioned event envelope produced by the Order
+Service.
+
+Local connector credentials and logical-replication names are placeholders in
+`.env.example`. Copy them to `.env` for local overrides; do not store real
+credentials in the repository.
+
+```bash
+docker compose up -d postgres kafka debezium-connect
+scripts/register-order-outbox-connector.sh
+curl -fsS http://localhost:${DEBEZIUM_CONNECT_PORT:-8086}/connectors/ecommerce-order-outbox-v1/status | jq .
+docker compose exec kafka kafka-topics.sh --bootstrap-server kafka:9092 --list
+docker compose exec kafka kafka-topics.sh --bootstrap-server kafka:9092 --describe --topic ecommerce.order.events
+docker compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic ecommerce.order.events --from-beginning --max-messages 5 --property print.key=true --property key.separator='|'
+```
+
+For a bounded local smoke check, make sure the Order schema has been migrated in
+the local `orders` database, then run:
+
+```bash
+scripts/verify-order-cdc.sh
+```
+
+The smoke helper inserts one synthetic outbox row and looks for its event ID and
+aggregate ID on `ecommerce.order.events`. It does not delete or truncate any
+existing data.

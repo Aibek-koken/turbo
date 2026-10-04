@@ -97,6 +97,16 @@ services:
       VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       KEY_CONVERTER_SCHEMAS_ENABLE: "false"
       VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONFIG_PROVIDERS: env
+      CONFIG_PROVIDERS_ENV_CLASS: org.apache.kafka.common.config.provider.EnvVarConfigProvider
+      DEBEZIUM_ORDER_DB_HOST: ${DEBEZIUM_ORDER_DB_HOST:-postgres}
+      DEBEZIUM_ORDER_DB_PORT: ${DEBEZIUM_ORDER_DB_PORT:-5432}
+      DEBEZIUM_ORDER_DB_USER: ${DEBEZIUM_ORDER_DB_USER:-ecommerce}
+      DEBEZIUM_ORDER_DB_PASSWORD: ${DEBEZIUM_ORDER_DB_PASSWORD:-change-me-local-postgres}
+      DEBEZIUM_ORDER_DB_NAME: ${DEBEZIUM_ORDER_DB_NAME:-orders}
+      DEBEZIUM_ORDER_TOPIC_PREFIX: ${DEBEZIUM_ORDER_TOPIC_PREFIX:-ecommerce.order.outbox.v1}
+      DEBEZIUM_ORDER_SLOT_NAME: ${DEBEZIUM_ORDER_SLOT_NAME:-order_outbox_slot_v1}
+      DEBEZIUM_ORDER_PUBLICATION_NAME: ${DEBEZIUM_ORDER_PUBLICATION_NAME:-order_outbox_publication_v1}
     ports:
       - "${DEBEZIUM_CONNECT_PORT:-8086}:8083"
     healthcheck:
