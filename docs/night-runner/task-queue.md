@@ -11,10 +11,11 @@ Primary target:
 - Sprint 1 complete.
 - Sprint 2 complete: US-06 through US-10.
 - Sprint 3 complete: US-11 through US-15.
-- Complete Sprint 4: US-16 through US-20.
+- Sprint 4 complete: US-16 through US-20.
+- Complete Sprint 5: US-21 through US-25.
 
-Do not continue into Audit, Notification, broad E2E/Testcontainers or CI unless
-the queue is explicitly extended.
+Do not continue into Sprint 6 broad E2E/Testcontainers, load/resilience,
+one-command deployment or CI work unless the queue is explicitly extended.
 
 ## Shared Rules
 
@@ -874,4 +875,273 @@ Allowed files:
 Validation:
 - `scripts/project-validate.sh payment-test`
 - `scripts/project-validate.sh order-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-031 phase=sprint5 status=pending -->
+## ECOM-031: Add MongoDB audit persistence foundation
+
+Status: pending
+
+Story coverage:
+- US-21 Central Audit Event Store in MongoDB
+
+Scope:
+- Add Spring Data MongoDB runtime configuration to Audit Notification Service using the existing local `audit` database and environment placeholders.
+- Define an Audit-owned document model for the complete versioned event envelope plus source topic, partition, offset and receipt time.
+- Store event ID, event type/version, aggregate ID, occurred time, trace ID, correlation ID, structured payload and searchable order/customer identifiers without importing Order or Payment domain classes.
+- Add a unique event-ID index for idempotency and focused indexes for event type, aggregate/order ID, correlation ID and occurred time.
+- Add repository/configuration tests that do not require a manually running MongoDB instance.
+- Do not add Kafka listeners or notification adapters yet.
+
+Allowed files:
+- `services/audit-notification-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh audit-notification-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-032 phase=sprint5 status=pending -->
+## ECOM-032: Consume and audit OrderCreated events idempotently
+
+Status: pending
+
+Story coverage:
+- US-21 Central Audit Event Store in MongoDB
+
+Scope:
+- Add an Audit-owned Spring Kafka consumer for `ecommerce.order.events` with an environment-driven topic, consumer group, retry/backoff and DLT settings.
+- Parse and validate the version-1 `OrderCreated` envelope without reusing Order Service JPA or application classes.
+- Persist the complete structured event and searchable metadata in MongoDB before acknowledging successful handling.
+- Treat the unique event ID as the replay boundary so duplicate and concurrent duplicate deliveries create one audit document.
+- Keep malformed envelopes out of the audit collection and classify them as non-retryable; keep transient Mongo/Kafka failures retryable and bounded.
+- Add focused parser, listener, persistence and duplicate-delivery tests.
+- Do not send email or push notifications yet.
+
+Allowed files:
+- `services/audit-notification-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh audit-notification-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-033 phase=sprint5 status=pending -->
+## ECOM-033: Consume and audit payment result events idempotently
+
+Status: pending
+
+Story coverage:
+- US-21 Central Audit Event Store in MongoDB
+
+Scope:
+- Add an Audit-owned consumer for `PaymentSucceeded` and `PaymentFailed` events from `ecommerce.payment.events` with its own environment-driven group, retry/backoff and DLT settings.
+- Parse and validate the version-1 payment-result envelope, including event/aggregate/order/payment/customer identifiers and terminal payment status.
+- Persist the complete structured event and searchable metadata through the existing idempotent audit application flow.
+- Ensure duplicates across retries or concurrent delivery produce one audit document and malformed events create no partial audit data.
+- Keep Order and Payment service domain classes outside the Audit Notification Service boundary.
+- Add focused success, failure, malformed, duplicate and transient-failure tests.
+- Do not send email or push notifications yet.
+
+Allowed files:
+- `services/audit-notification-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh audit-notification-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-034 phase=sprint5 status=pending -->
+## ECOM-034: Add replay-safe notification routing and delivery ledger
+
+Status: pending
+
+Story coverage:
+- US-22 Email Notifications
+- US-23 Push Notification Adapter
+
+Scope:
+- Define which audited V1 events create customer notifications: order creation and terminal payment success/failure.
+- Add a MongoDB notification-delivery document with channel, event ID, order/customer references, status, attempt metadata, safe failure detail and timestamps.
+- Enforce one delivery record per event and channel with a compound unique index while allowing failed or interrupted attempts to be retried deterministically.
+- Route valid audited events into `EMAIL` and `PUSH` delivery records without requiring real email addresses, device tokens or external credentials.
+- Keep audit-event persistence and delivery bookkeeping independently replay-safe so a retry can recover missing deliveries without duplicating completed ones.
+- Add routing and repository tests for relevant, irrelevant, duplicate and retry paths.
+- Do not call an email or push provider yet.
+
+Allowed files:
+- `services/audit-notification-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh audit-notification-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-035 phase=sprint5 status=pending -->
+## ECOM-035: Add mock email notification delivery
+
+Status: pending
+
+Story coverage:
+- US-22 Email Notifications
+
+Scope:
+- Add a local mock/test email adapter behind an Audit-owned notification port; do not add SMTP credentials or a real provider integration.
+- Build deterministic email payloads for order-created, payment-succeeded and payment-failed events using customer, order and event metadata from the delivery record.
+- Dispatch pending email deliveries and transition the ledger through explicit success/failure states with bounded retry behavior.
+- Ensure replay of the same business event or delivery request does not send a second completed email.
+- Log only safe delivery metadata and never invent or expose real customer contact details.
+- Add focused adapter, payload, retry and duplicate-delivery tests.
+
+Allowed files:
+- `services/audit-notification-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh audit-notification-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-036 phase=sprint5 status=pending -->
+## ECOM-036: Add mock push notification delivery
+
+Status: pending
+
+Story coverage:
+- US-23 Push Notification Adapter
+
+Scope:
+- Add a local mock/test push adapter behind the existing notification port boundary; do not add real device tokens, credentials or a production push SDK.
+- Build deterministic push payloads linked to the customer, order, event and notification type.
+- Dispatch pending push deliveries and update the delivery ledger through explicit success/failure states with bounded retry behavior.
+- Ensure duplicate business events and replayed delivery work do not send a second completed push notification.
+- Keep channel-specific adapter code separate from audit persistence and shared routing rules.
+- Add focused adapter, payload, retry and duplicate-delivery tests.
+
+Allowed files:
+- `services/audit-notification-service/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh audit-notification-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-037 phase=sprint5 status=pending -->
+## ECOM-037: Complete end-to-end correlation and trace propagation
+
+Status: pending
+
+Story coverage:
+- US-24 End-to-End Correlation & Trace Propagation
+
+Scope:
+- Verify and complete propagation of `traceId`, `correlationId` and `eventId` across Gateway, Order creation, both Kafka hops, Payment processing, audit persistence and notification delivery.
+- Enable Spring Kafka observation/tracing where needed and create consumer processing spans without replacing the event-envelope correlation contract.
+- Restore envelope correlation and event metadata into structured consumer logging context for the duration of handling, then clear it safely.
+- Preserve incoming `X-Correlation-Id` through Gateway and Order; generate a value only when the request does not provide one.
+- Keep identifiers in audit documents and notification logs so one purchase can be followed without using high-cardinality metric tags.
+- Add focused propagation tests and update the observability runbook with a concrete local trace/correlation inspection flow.
+- Do not add broad Sprint 6 E2E/Testcontainers coverage.
+
+Allowed files:
+- `services/gateway-service/**`
+- `services/order-service/**`
+- `services/payment-service/**`
+- `services/audit-notification-service/**`
+- `libs/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh observability-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-038 phase=sprint5 status=pending -->
+## ECOM-038: Add bounded operational service metrics
+
+Status: pending
+
+Story coverage:
+- US-25 Operational Metrics & Alert Signals
+
+Scope:
+- Keep Spring Boot HTTP latency/error metrics and add focused custom meters for Catalog cache hit/miss, Kafka consumer outcomes, terminal payment failures and notification delivery outcomes.
+- Record retry and dead-letter publication activity for the Order, Payment and Audit Notification consumer flows where those signals are not already exposed.
+- Use stable low-cardinality tags such as service, topic, event type, channel and outcome; never tag metrics with event, order, payment, customer, trace or correlation IDs.
+- Name and describe meters consistently so Prometheus queries remain understandable across services.
+- Add focused meter tests using an in-memory registry and simulated success/failure paths.
+- Update the observability runbook with metric names and representative PromQL queries.
+- Do not add dashboards, external alert delivery or load tests.
+
+Allowed files:
+- `services/catalog-service/**`
+- `services/order-service/**`
+- `services/payment-service/**`
+- `services/audit-notification-service/**`
+- `libs/**`
+- `pom.xml`
+- `.env.example`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh observability-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-039 phase=sprint5 status=pending -->
+## ECOM-039: Add Prometheus alert rules and DLQ depth signals
+
+Status: pending
+
+Story coverage:
+- US-25 Operational Metrics & Alert Signals
+
+Scope:
+- Expose a bounded Kafka DLT retained-record/depth gauge for the known Order, Payment and Audit Notification dead-letter topics using environment-driven configuration and safe behavior when Kafka is unavailable.
+- Keep topic names as a fixed configured set and avoid dynamic high-cardinality labels or broker-wide discovery.
+- Add Prometheus rule files and Docker Compose wiring for service-down, sustained HTTP error, payment-failure, notification-failure, consumer-failure and positive-DLQ-depth signals.
+- Add configuration/unit tests for gauge refresh behavior, unavailable brokers, rule loading and expected metric expressions.
+- Document local Prometheus queries, rule inspection and a bounded failure simulation that does not delete Kafka or application data.
+- Keep alert notification delivery and production monitoring infrastructure out of Sprint 5.
+
+Allowed files:
+- `services/audit-notification-service/**`
+- `infra/observability/**`
+- `docker-compose.yml`
+- `.env.example`
+- `docs/**`
+- `infra/README.md`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh audit-notification-test`
+- `scripts/project-validate.sh observability-config`
 <!-- /task -->

@@ -1,8 +1,20 @@
 # Project State
 
-Last updated: 2026-10-04
+Last updated: 2026-10-05
 
 ## Current Status
+
+Sprint 5 night-runner workflow is prepared but no Sprint 5 implementation has
+started. The queue now contains pending tasks ECOM-031 through ECOM-039 for the
+Audit Notification Service MongoDB foundation, idempotent Order/Payment audit
+consumers, replay-safe notification routing, mock email and push adapters,
+end-to-end correlation/tracing, bounded service metrics and Prometheus/DLQ
+signals. `docs/night-runner/sprint5-context-pack.md` is the compact source of
+truth for those night sessions. Runner, prompt builder, safe-approval, status
+and validation scripts recognize the new phase. The Audit Notification Service
+baseline and aggregate non-socket service suites pass through the new
+`audit-notification-test` and `observability-test` modes on Java 21. Next task:
+ECOM-031.
 
 ECOM-030 is complete. Payment Service now has environment-driven bounded retry,
 backoff and dead-letter settings for `OrderCreated` consumption, including a

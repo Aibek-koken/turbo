@@ -198,6 +198,56 @@ README.md
 STATE.md
 EOF
       ;;
+    ECOM-031|ECOM-032|ECOM-033|ECOM-034|ECOM-035|ECOM-036)
+      cat <<'EOF'
+services/audit-notification-service/**
+pom.xml
+.env.example
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-037)
+      cat <<'EOF'
+services/gateway-service/**
+services/order-service/**
+services/payment-service/**
+services/audit-notification-service/**
+libs/**
+pom.xml
+.env.example
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-038)
+      cat <<'EOF'
+services/catalog-service/**
+services/order-service/**
+services/payment-service/**
+services/audit-notification-service/**
+libs/**
+pom.xml
+.env.example
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-039)
+      cat <<'EOF'
+services/audit-notification-service/**
+infra/observability/**
+infra/README.md
+docker-compose.yml
+.env.example
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
     *)
       return 1
       ;;

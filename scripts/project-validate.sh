@@ -123,6 +123,31 @@ case "$MODE" in
     need_dir services/payment-service
     mvn_cmd -q -pl services/payment-service -am test
     ;;
+  audit-notification-validate)
+    need_file pom.xml
+    need_dir services/audit-notification-service
+    mvn_cmd -q -pl services/audit-notification-service -am -DskipTests validate
+    ;;
+  audit-notification-test)
+    need_file pom.xml
+    need_dir services/audit-notification-service
+    mvn_cmd -q -pl services/audit-notification-service -am test
+    ;;
+  observability-test)
+    need_file pom.xml
+    need_dir services/gateway-service
+    need_dir services/catalog-service
+    need_dir services/order-service
+    need_dir services/payment-service
+    need_dir services/audit-notification-service
+    # Gateway's existing security tests bind a random local port, which is not
+    # available in restricted agent sandboxes. Compile it here; focused tasks
+    # should still run any non-socket Gateway tests they add.
+    mvn_cmd -q -pl services/gateway-service -am -DskipTests validate
+    mvn_cmd -q \
+      -pl services/catalog-service,services/order-service,services/payment-service,services/audit-notification-service \
+      -am test
+    ;;
   order-cdc-config)
     need_file docker-compose.yml
     need_file infra/debezium/order-outbox-connector.json
@@ -163,6 +188,29 @@ case "$MODE" in
         infra/debezium/payment-outbox-connector.json >/dev/null
     else
       echo "jq is not available; skipping strict connector JSON parsing." >&2
+    fi
+    if docker compose version >/dev/null 2>&1; then
+      docker compose config >/dev/null
+    else
+      echo "Docker Compose is not available." >&2
+      exit 2
+    fi
+    ;;
+  observability-config)
+    need_file docker-compose.yml
+    need_file infra/observability/prometheus.yml
+    need_file infra/observability/alert-rules.yml
+    if ! grep -Eq 'rule_files:' infra/observability/prometheus.yml; then
+      echo "Prometheus config does not load rule files." >&2
+      exit 2
+    fi
+    if ! grep -Eq 'alert:' infra/observability/alert-rules.yml; then
+      echo "Prometheus alert rules do not define any alerts." >&2
+      exit 2
+    fi
+    if ! grep -Eiq 'dlq|dead.?letter' infra/observability/alert-rules.yml; then
+      echo "Prometheus alert rules do not include a DLQ signal." >&2
+      exit 2
     fi
     if docker compose version >/dev/null 2>&1; then
       docker compose config >/dev/null

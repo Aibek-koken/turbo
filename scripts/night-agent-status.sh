@@ -9,6 +9,7 @@ task_phase() {
     ECOM-007|ECOM-008|ECOM-009|ECOM-010|ECOM-011|ECOM-012|ECOM-013|ECOM-014|ECOM-015) echo "sprint2" ;;
     ECOM-016|ECOM-017|ECOM-018|ECOM-019|ECOM-020|ECOM-021|ECOM-022) echo "sprint3" ;;
     ECOM-023|ECOM-024|ECOM-025|ECOM-026|ECOM-027|ECOM-028|ECOM-029|ECOM-030) echo "sprint4" ;;
+    ECOM-031|ECOM-032|ECOM-033|ECOM-034|ECOM-035|ECOM-036|ECOM-037|ECOM-038|ECOM-039) echo "sprint5" ;;
     *) echo "unknown" ;;
   esac
 }
@@ -75,5 +76,5 @@ fi
 
 echo
 echo "== Suggested commands =="
-echo "scripts/night-agent-runner.sh --agent codex --overnight --phase sprint4 --max-minutes 28800 --dry-run"
-echo "scripts/night-agent-runner.sh --agent codex --overnight --phase sprint4 --max-minutes 28800"
+echo "scripts/night-agent-runner.sh --agent codex --overnight --phase sprint5 --max-minutes 28800 --dry-run"
+echo "scripts/night-agent-runner.sh --agent codex --overnight --phase sprint5 --max-minutes 28800"

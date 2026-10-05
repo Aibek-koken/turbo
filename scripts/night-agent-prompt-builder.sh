@@ -52,6 +52,7 @@ task_phase() {
     ECOM-007|ECOM-008|ECOM-009|ECOM-010|ECOM-011|ECOM-012|ECOM-013|ECOM-014|ECOM-015) echo "sprint2" ;;
     ECOM-016|ECOM-017|ECOM-018|ECOM-019|ECOM-020|ECOM-021|ECOM-022) echo "sprint3" ;;
     ECOM-023|ECOM-024|ECOM-025|ECOM-026|ECOM-027|ECOM-028|ECOM-029|ECOM-030) echo "sprint4" ;;
+    ECOM-031|ECOM-032|ECOM-033|ECOM-034|ECOM-035|ECOM-036|ECOM-037|ECOM-038|ECOM-039) echo "sprint5" ;;
     *) echo "unknown"; return 1 ;;
   esac
 }
@@ -62,6 +63,7 @@ context_pack_for_task() {
     sprint2) echo "docs/night-runner/sprint2-context-pack.md" ;;
     sprint3) echo "docs/night-runner/sprint3-context-pack.md" ;;
     sprint4) echo "docs/night-runner/sprint4-context-pack.md" ;;
+    sprint5) echo "docs/night-runner/sprint5-context-pack.md" ;;
     *) return 1 ;;
   esac
 }
@@ -287,6 +289,73 @@ services/order-service/src/main/resources/application.yml
 services/payment-service/src/test
 services/order-service/src/test
 docs/night-runner/sprint4-context-pack.md
+EOF
+      ;;
+    ECOM-031)
+      cat <<'EOF'
+services/audit-notification-service/pom.xml
+services/audit-notification-service/src/main/resources/application.yml
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification
+docker-compose.yml
+.env.example
+docs/night-runner/sprint5-context-pack.md
+EOF
+      ;;
+    ECOM-032)
+      cat <<'EOF'
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification
+services/audit-notification-service/src/main/resources/application.yml
+services/order-service/src/main/java/com/kora/ecommerce/order/application/OrderCreatedOutboxEventFactory.java
+services/payment-service/src/main/java/com/kora/ecommerce/payment/config/PaymentKafkaConsumerConfiguration.java
+docs/night-runner/sprint5-context-pack.md
+EOF
+      ;;
+    ECOM-033)
+      cat <<'EOF'
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification
+services/audit-notification-service/src/main/resources/application.yml
+services/payment-service/src/main/java/com/kora/ecommerce/payment/application/PaymentResultOutboxEventFactory.java
+services/order-service/src/main/java/com/kora/ecommerce/order/config/OrderKafkaConfiguration.java
+docs/night-runner/sprint5-context-pack.md
+EOF
+      ;;
+    ECOM-034|ECOM-035|ECOM-036)
+      cat <<'EOF'
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification
+services/audit-notification-service/src/main/resources/application.yml
+services/audit-notification-service/src/test
+docs/night-runner/sprint5-context-pack.md
+EOF
+      ;;
+    ECOM-037)
+      cat <<'EOF'
+services/gateway-service/src/main/java/com/kora/ecommerce/gateway/observability
+services/order-service/src/main/java/com/kora/ecommerce/order
+services/payment-service/src/main/java/com/kora/ecommerce/payment
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification
+docs/observability-runbook.md
+docs/night-runner/sprint5-context-pack.md
+EOF
+      ;;
+    ECOM-038)
+      cat <<'EOF'
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/cache
+services/order-service/src/main/java/com/kora/ecommerce/order
+services/payment-service/src/main/java/com/kora/ecommerce/payment
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification
+docs/observability-runbook.md
+docs/night-runner/sprint5-context-pack.md
+EOF
+      ;;
+    ECOM-039)
+      cat <<'EOF'
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification
+services/audit-notification-service/src/main/resources/application.yml
+infra/observability/prometheus.yml
+docker-compose.yml
+.env.example
+docs/observability-runbook.md
+docs/night-runner/sprint5-context-pack.md
 EOF
       ;;
   esac

@@ -110,6 +110,13 @@ Initial events:
 17. Mock payment provider client and terminal payment result persistence.
 18. Payment-result Debezium routing and Order Service result consumer.
 19. Retry, backoff and dead-letter handling for payment event flows.
+20. Audit Notification Service MongoDB persistence and searchable event model.
+21. Idempotent Order and Payment Kafka audit consumers.
+22. Replay-safe notification routing and delivery ledger.
+23. Mock email and push notification adapters.
+24. End-to-end REST/Kafka correlation and trace propagation.
+25. Bounded low-cardinality service metrics.
+26. Prometheus alert rules and Kafka DLT depth signals.
 
 ## Current Constraints
 
