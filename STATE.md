@@ -1,20 +1,202 @@
 # Project State
 
-Last updated: 2026-10-05
+Last updated: 2026-10-06
 
 ## Current Status
 
-Sprint 5 night-runner workflow is prepared but no Sprint 5 implementation has
-started. The queue now contains pending tasks ECOM-031 through ECOM-039 for the
-Audit Notification Service MongoDB foundation, idempotent Order/Payment audit
-consumers, replay-safe notification routing, mock email and push adapters,
-end-to-end correlation/tracing, bounded service metrics and Prometheus/DLQ
-signals. `docs/night-runner/sprint5-context-pack.md` is the compact source of
-truth for those night sessions. Runner, prompt builder, safe-approval, status
-and validation scripts recognize the new phase. The Audit Notification Service
-baseline and aggregate non-socket service suites pass through the new
-`audit-notification-test` and `observability-test` modes on Java 21. Next task:
-ECOM-031.
+ECOM-039 is complete. Audit Notification Service now exposes a bounded
+Micrometer gauge, `ecommerce.kafka.dead.letter.topic.depth`, for the fixed
+configured Order, Payment and Audit Notification dead-letter topics. The gauge
+configuration is environment-driven, uses only bounded `service` and `topic`
+labels, sums retained records across topic partitions through Kafka Admin
+offset reads, caches refreshes, and falls back to zero depth with a warning if
+Kafka is unavailable or a configured DLT topic cannot be inspected. Prometheus
+now loads `infra/observability/alert-rules.yml` through `rule_files`, and
+Docker Compose mounts that local rule file into the Prometheus container. The
+rules cover service-down, sustained HTTP 5xx, terminal payment failures,
+notification delivery failures, Kafka consumer failures/rejections and
+positive DLT retained depth. The observability runbook now documents the local
+DLT depth query, alert/rule inspection commands and a bounded one-record
+smoke simulation against a temporary local DLT topic without deleting Kafka or
+application data. Focused tests cover DLT-depth property binding and bounds,
+gauge refresh caching, unavailable-broker behavior and expected Prometheus
+rule expressions. Validation passed:
+`scripts/project-validate.sh audit-notification-test` and
+`scripts/project-validate.sh observability-config` on Java 21. Next task:
+none queued.
+
+ECOM-038 is complete. Catalog product-detail cache lookups are now wrapped with
+bounded Micrometer hit/miss counters for the Redis-backed and no-op cache
+paths. Order, Payment and Audit Notification Kafka consumers now record
+low-cardinality consumer outcome counters, plus retry and dead-letter
+publication attempt counters through their existing Spring Kafka error-handler
+paths. Payment Service records terminal payment result outcomes so failed
+terminal payments are directly queryable without tagging payment, order,
+customer, trace, correlation or event identifiers. Audit Notification Service
+records audit persistence outcomes and mock email/push delivery outcomes by
+service, topic, event type, channel and outcome only. Focused SimpleMeterRegistry
+tests cover cache hit/miss, consumer success/rejection/failure paths,
+retry/DLT counters, terminal payment failure metrics, audit persistence metrics
+and notification delivery metrics. The observability runbook now lists the
+custom meter names and representative PromQL for HTTP errors, cache hit ratio,
+consumer failures, retries, DLT publication attempts, payment failures, audit
+persistence failures and notification failures. Validation passed:
+`scripts/project-validate.sh observability-test` on Java 21. Next task:
+ECOM-039.
+
+ECOM-037 is complete. End-to-end correlation and trace propagation now keeps
+the envelope contract as the cross-service source of truth while adding
+service-local Kafka processing observations and scoped logging context. Gateway
+continues to preserve an incoming `X-Correlation-Id` or generate one only when
+absent, and Order now has focused filter coverage proving the same
+correlation ID is available in MDC during order handling and cleared
+afterward. Order creation still writes MDC `traceId` and `correlationId` into
+the `OrderCreated` outbox envelope. Order, Payment and Audit Kafka listener
+configuration now enables Spring Kafka observation, and valid consumer
+handling creates low-cardinality processing observations while temporarily
+binding envelope `traceId`, `correlationId`, `eventId`, `eventType`,
+`eventVersion` and `aggregateId` into MDC for the active handler scope only.
+Payment result handling in Order, `OrderCreated` handling in Payment, and both
+Audit consumer paths have focused tests proving the MDC scope is restored
+safely. Audit notification dispatch now binds each delivery record's own event
+metadata while sending pending email or push deliveries so batched notification
+logs are not polluted by the triggering listener's context. Email, push and
+mock-adapter logs now include trace and correlation IDs plus event/order/payment
+metadata, while no high-cardinality metric tags were added. The observability
+runbook documents a concrete local inspection flow across Gateway, Order
+outbox, Kafka topics, Payment, Audit Mongo documents, notification deliveries,
+logs and Jaeger. Validation passed:
+`scripts/project-validate.sh observability-test` on Java 21. Focused Gateway
+unit validation also passed:
+`mvn -q -pl services/gateway-service -Dtest=CorrelationIdWebFilterTest test`
+with Java 21 selected through `/usr/libexec/java_home`. Next task: ECOM-038.
+
+ECOM-036 is complete. Audit Notification Service now dispatches pending `PUSH`
+notification deliveries through the existing Audit-owned notification port
+boundary with a local mock adapter only; no device tokens, provider credentials
+or production push SDKs were added. Push payloads are deterministic for V1
+`OrderCreated`, `PaymentSucceeded` and `PaymentFailed` deliveries and are built
+from safe delivery-ledger metadata: customer reference, order reference,
+optional payment reference, event ID/type/version, occurrence time, trace ID
+and correlation ID. Valid Kafka audit handling now persists the audit document,
+routes delivery records and then dispatches both pending email and push work.
+The push dispatcher moves records through `PENDING -> IN_PROGRESS -> SENT` on
+success or `PENDING -> IN_PROGRESS -> FAILED` on adapter/payload failures,
+caps retry attempts through bounded push settings, and marks exhausted
+deliveries failed without sending again. Replayed business events still recover
+failed or interrupted push records through the existing routing path, while
+completed `SENT` push records are not requeued or sent a second time. Safe logs
+include delivery/event/order/payment/correlation metadata only. Focused tests
+cover push payload construction, the mock adapter, success/failure/exhausted
+dispatch, disabled dispatch and duplicate completed-delivery behavior.
+Validation passed: `scripts/project-validate.sh audit-notification-test` on
+Java 21. Next task: ECOM-037.
+
+ECOM-035 is complete. Audit Notification Service now dispatches pending
+`EMAIL` notification deliveries through an Audit-owned email port backed by a
+local mock adapter only; no SMTP credentials, provider endpoints, real customer
+email addresses or production SDKs were added. Email payloads are deterministic
+for V1 `OrderCreated`, `PaymentSucceeded` and `PaymentFailed` deliveries and
+are built only from safe delivery-ledger metadata: customer reference, order
+reference, optional payment reference, event ID/type/version, occurrence time,
+trace ID and correlation ID. Valid Kafka audit handling now persists the audit
+document, routes delivery records and then dispatches pending email work. The
+dispatcher moves records through `PENDING -> IN_PROGRESS -> SENT` on success
+or `PENDING -> IN_PROGRESS -> FAILED` on adapter/payload failures, caps retry
+attempts through bounded email settings, and marks exhausted deliveries failed
+without sending again. Replayed business events still recover failed or
+interrupted email records through the existing routing path, while completed
+`SENT` email records are not requeued or sent a second time. Safe logs include
+delivery/event/order/payment/correlation metadata only. Focused tests cover
+payload construction, the mock adapter, success/failure/exhausted dispatch,
+disabled dispatch and duplicate completed-delivery behavior. Validation passed:
+`scripts/project-validate.sh audit-notification-test` on Java 21. Next task:
+ECOM-036.
+
+ECOM-034 is complete. Audit Notification Service now owns a replay-safe
+MongoDB notification delivery ledger in `notification_deliveries`. Delivery
+documents capture `EMAIL` and `PUSH` channel records with event ID/type/version,
+order/customer/payment references, delivery status
+(`PENDING`, `IN_PROGRESS`, `SENT`, `FAILED`), attempt count, last-attempt time,
+safe failure detail, event/timeline timestamps, trace ID and correlation ID.
+The ledger declares a compound unique event ID plus channel index so each
+event/channel has one delivery record while still supporting focused lookup by
+event, channel, order, customer, status and correlation ID. A new routing
+service defines the relevant customer-notification events as V1 `OrderCreated`,
+`PaymentSucceeded` and `PaymentFailed`; unsupported event types or versions are
+ignored without delivery side effects. The order-created and payment-result
+Kafka audit listeners now persist the audit event first and then route
+notification ledger records, even when audit persistence returns a duplicate
+replay skip. This keeps the audit-event replay boundary independent from
+delivery bookkeeping, allowing Kafka retry/replay to recover a missing channel
+record without duplicating an existing completed `SENT` delivery. Existing
+`FAILED` or `IN_PROGRESS` records are deterministically returned to `PENDING`
+for later adapter retry, while no real email, push, SMTP, device-token or
+provider integration was added. Focused document, index, routing, repository
+metadata and listener tests cover relevant, irrelevant, duplicate, missing
+channel and retry paths. Validation passed:
+`scripts/project-validate.sh audit-notification-test` on Java 21. Next task:
+ECOM-035.
+
+ECOM-033 is complete. Audit Notification Service now consumes
+`PaymentSucceeded` and `PaymentFailed` version-1 envelopes from
+`ecommerce.payment.events` through an Audit-owned Spring Kafka listener with
+its own environment-driven topic, consumer group, enablement, bounded
+retry/backoff and payment-result DLT settings. Listener container factories now
+bind OrderCreated and payment-result consumers to their respective error
+handlers so malformed parser failures remain non-retryable while transient
+Mongo/Kafka failures stay retryable. The new Audit-local payment-result parser
+validates event type/version, event and aggregate identifiers, aggregate/order
+consistency, occurred time, trace/correlation IDs, payment/order/customer
+identifiers, money/currency, provider attempt metadata and terminal payment
+status matching before any persistence side effect. Valid payment result
+events are persisted through the existing Mongo audit application flow with the
+complete structured payload plus searchable event, aggregate/order/customer
+and payment metadata; payment ID is now indexed for focused lookups. Duplicate
+or concurrent duplicate deliveries still converge on one audit document via
+the unique event ID boundary, and malformed events create no partial audit
+data. Email and push notification delivery remain intentionally out of scope.
+Focused parser, listener, persistence, duplicate, transient-failure and Kafka
+configuration tests were added. Validation passed:
+`scripts/project-validate.sh audit-notification-test` on Java 21. Next task:
+ECOM-034.
+
+ECOM-032 is complete. Audit Notification Service now has an Audit-owned Spring
+Kafka consumer for version-1 `OrderCreated` envelopes from
+`ecommerce.order.events`, with environment-driven topic, consumer group,
+enablement, bounded retry/backoff and service-specific DLT settings. The
+consumer uses an Audit-local parser and validation model without importing
+Order Service JPA or application classes, rejects malformed or unsupported
+envelopes before persistence, and classifies those parser failures as
+non-retryable for Kafka error handling. Valid events are persisted through the
+Audit-owned Mongo audit document before listener completion, including the
+complete structured payload, event metadata, order/customer identifiers,
+occurred and received times, trace/correlation IDs and Kafka source position.
+Duplicate or concurrent duplicate deliveries converge on one audit document by
+treating the unique event ID as the replay boundary; Mongo duplicate-key races
+return a duplicate skip while transient Mongo failures remain retryable. Email
+and push notification delivery remain intentionally out of scope. Focused
+parser, listener, persistence, duplicate-delivery and Kafka configuration tests
+were added. Validation passed:
+`scripts/project-validate.sh audit-notification-test` on Java 21. Next task:
+ECOM-033.
+
+ECOM-031 is complete. Audit Notification Service now has Spring Data MongoDB
+runtime wiring against the local `audit` database through environment-driven
+placeholders. The new Audit-owned `audit_events` document stores the complete
+structured versioned event payload plus event ID, type/version, aggregate ID,
+order/customer/payment identifiers, occurred and received times, trace and
+correlation IDs, and source topic/partition/offset without importing Order or
+Payment domain classes. Mongo index auto-creation is enabled by default for
+the service, with event ID uniqueness for the audit replay boundary plus
+focused search indexes for event type,
+aggregate/order/customer ID, correlation ID and occurred time. The repository
+exposes event-ID replay lookups and focused query methods for future consumers.
+Tests cover document validation, structured payload defensive copying, index
+annotations, Mongo property binding and repository configuration metadata
+without requiring a manually running MongoDB instance. Validation passed:
+`scripts/project-validate.sh audit-notification-test` on Java 21. Next task:
+ECOM-032.
 
 ECOM-030 is complete. Payment Service now has environment-driven bounded retry,
 backoff and dead-letter settings for `OrderCreated` consumption, including a
@@ -458,6 +640,24 @@ Night run target:
    routing for payment result events and Order Service consumption/status
    updates plus bounded retry/backoff/dead-letter handling for both payment
    event consumers. No further Sprint 4 task is queued.
+5. Sprint 5 is complete through ECOM-039, covering Audit-owned Mongo audit
+   persistence, idempotent Order/Payment Kafka audit consumers,
+   replay-safe notification routing/delivery ledger creation, local mock
+   email and push delivery, and end-to-end REST/Kafka trace and correlation
+   propagation, bounded operational metrics, local Prometheus alert rules and
+   fixed-topic DLT depth signals. Next queued task: none.
+
+Sprint 5 execution order so far:
+
+- MongoDB audit event persistence and searchable event model. (complete)
+- Idempotent `OrderCreated` audit consumer. (complete)
+- Idempotent payment-result audit consumer. (complete)
+- Replay-safe notification routing and delivery ledger. (complete)
+- Mock email notification delivery. (complete)
+- Mock push notification delivery. (complete)
+- End-to-end correlation and trace propagation. (complete)
+- Bounded low-cardinality service metrics. (complete)
+- Prometheus alert rules and Kafka DLT depth signals. (complete)
 
 Sprint 4 prepared execution order:
 
@@ -479,9 +679,9 @@ Completed Sprint 3 execution order:
 - Debezium CDC routing to `ecommerce.order.events`.
 - Customer-owned and operations order query/history APIs.
 
-Excluded from this Sprint 4 run:
+Excluded from this Sprint 5 run:
 
-- Audit and notification flows.
+- Real email, SMTP, push device-provider integrations or credentials.
 - Broad E2E/Testcontainers work.
 - CI release pipeline.
 
@@ -496,6 +696,42 @@ Excluded from this Sprint 4 run:
   long overnight work because it improves rollback and changed-file tracking.
 
 ## Latest Validation
+
+ECOM-039 validation passed:
+
+```bash
+scripts/project-validate.sh audit-notification-test
+scripts/project-validate.sh observability-config
+```
+
+ECOM-037 validation passed:
+
+```bash
+scripts/project-validate.sh observability-test
+JAVA_HOME=$(/usr/libexec/java_home -v 21) mvn -q -pl services/gateway-service -Dtest=CorrelationIdWebFilterTest test
+```
+
+Running the focused Gateway test without overriding `JAVA_HOME` still uses the
+default shell Java 17 and fails because the test classes were compiled for Java
+21. The Java 21 rerun passed.
+
+ECOM-036 validation passed:
+
+```bash
+scripts/project-validate.sh audit-notification-test
+```
+
+ECOM-035 validation passed:
+
+```bash
+scripts/project-validate.sh audit-notification-test
+```
+
+ECOM-034 validation passed:
+
+```bash
+scripts/project-validate.sh audit-notification-test
+```
 
 ECOM-030 validation passed:
 
@@ -595,16 +831,17 @@ scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-mi
 
 ## Next Command
 
-Continue Sprint 4 with the next queued task, ECOM-030. Dry-run the runner with:
+No task is queued after ECOM-039 in the current Sprint 5 task queue. When a new
+task is added, dry-run the runner with:
 
 ```bash
-scripts/night-agent-runner.sh --agent codex --overnight --phase sprint4 --max-minutes 28800 --dry-run
+scripts/night-agent-runner.sh --agent codex --overnight --phase sprint5 --max-minutes 28800 --dry-run
 ```
 
-Start the overnight Sprint 4 runner from the repo root with:
+Start the overnight Sprint 5 runner from the repo root with:
 
 ```bash
-caffeinate -dimsu scripts/night-agent-runner.sh --agent codex --overnight --phase sprint4 --max-minutes 28800
+caffeinate -dimsu scripts/night-agent-runner.sh --agent codex --overnight --phase sprint5 --max-minutes 28800
 ```
 
-Next task: ECOM-030.
+Next task: none queued.

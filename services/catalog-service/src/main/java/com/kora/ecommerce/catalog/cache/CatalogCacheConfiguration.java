@@ -3,6 +3,7 @@ package com.kora.ecommerce.catalog.cache;
 import java.time.Duration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
@@ -36,8 +37,11 @@ class CatalogCacheConfiguration {
             StringRedisTemplate redisTemplate,
             ProductDetailCacheKeyGenerator keyGenerator,
             ProductDetailCacheJson cacheJson,
-            CatalogCacheProperties properties) {
-        return new RedisProductDetailCache(redisTemplate, keyGenerator, cacheJson, properties);
+            CatalogCacheProperties properties,
+            MeterRegistry meterRegistry) {
+        return new MeteredProductDetailCache(
+                new RedisProductDetailCache(redisTemplate, keyGenerator, cacheJson, properties),
+                new CatalogCacheMetrics(meterRegistry));
     }
 
     @Bean
@@ -51,8 +55,10 @@ class CatalogCacheConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ProductDetailCache.class)
-    ProductDetailCache noopProductDetailCache() {
-        return NoopProductDetailCache.INSTANCE;
+    ProductDetailCache noopProductDetailCache(MeterRegistry meterRegistry) {
+        return new MeteredProductDetailCache(
+                NoopProductDetailCache.INSTANCE,
+                new CatalogCacheMetrics(meterRegistry));
     }
 
     @Bean

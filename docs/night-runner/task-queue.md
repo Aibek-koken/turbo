@@ -877,10 +877,10 @@ Validation:
 - `scripts/project-validate.sh order-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-031 phase=sprint5 status=pending -->
+<!-- task:id=ECOM-031 phase=sprint5 status=done -->
 ## ECOM-031: Add MongoDB audit persistence foundation
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-21 Central Audit Event Store in MongoDB
@@ -905,10 +905,10 @@ Validation:
 - `scripts/project-validate.sh audit-notification-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-032 phase=sprint5 status=pending -->
+<!-- task:id=ECOM-032 phase=sprint5 status=done -->
 ## ECOM-032: Consume and audit OrderCreated events idempotently
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-21 Central Audit Event Store in MongoDB
@@ -934,10 +934,10 @@ Validation:
 - `scripts/project-validate.sh audit-notification-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-033 phase=sprint5 status=pending -->
+<!-- task:id=ECOM-033 phase=sprint5 status=done -->
 ## ECOM-033: Consume and audit payment result events idempotently
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-21 Central Audit Event Store in MongoDB
@@ -963,10 +963,10 @@ Validation:
 - `scripts/project-validate.sh audit-notification-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-034 phase=sprint5 status=pending -->
+<!-- task:id=ECOM-034 phase=sprint5 status=done -->
 ## ECOM-034: Add replay-safe notification routing and delivery ledger
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-22 Email Notifications
@@ -993,10 +993,10 @@ Validation:
 - `scripts/project-validate.sh audit-notification-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-035 phase=sprint5 status=pending -->
+<!-- task:id=ECOM-035 phase=sprint5 status=done -->
 ## ECOM-035: Add mock email notification delivery
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-22 Email Notifications
@@ -1021,10 +1021,10 @@ Validation:
 - `scripts/project-validate.sh audit-notification-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-036 phase=sprint5 status=pending -->
+<!-- task:id=ECOM-036 phase=sprint5 status=done -->
 ## ECOM-036: Add mock push notification delivery
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-23 Push Notification Adapter
@@ -1049,10 +1049,10 @@ Validation:
 - `scripts/project-validate.sh audit-notification-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-037 phase=sprint5 status=pending -->
+<!-- task:id=ECOM-037 phase=sprint5 status=done -->
 ## ECOM-037: Complete end-to-end correlation and trace propagation
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-24 End-to-End Correlation & Trace Propagation
@@ -1082,10 +1082,10 @@ Validation:
 - `scripts/project-validate.sh observability-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-038 phase=sprint5 status=pending -->
+<!-- task:id=ECOM-038 phase=sprint5 status=done -->
 ## ECOM-038: Add bounded operational service metrics
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-25 Operational Metrics & Alert Signals
@@ -1115,10 +1115,10 @@ Validation:
 - `scripts/project-validate.sh observability-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-039 phase=sprint5 status=pending -->
+<!-- task:id=ECOM-039 phase=sprint5 status=done -->
 ## ECOM-039: Add Prometheus alert rules and DLQ depth signals
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-25 Operational Metrics & Alert Signals

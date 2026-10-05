@@ -1,0 +1,72 @@
+groups:
+  - name: ecommerce-operational-signals
+    rules:
+      - alert: EcommerceServiceDown
+        expr: |
+          up{job=~"gateway-service|catalog-service|order-service|payment-service|audit-notification-service"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "E-commerce service target is down"
+          description: "Prometheus has not been able to scrape {{ $labels.job }} for at least one minute."
+
+      - alert: EcommerceSustainedHttpServerErrors
+        expr: |
+          sum by (application) (
+            rate(http_server_requests_seconds_count{status=~"5.."}[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Sustained HTTP 5xx responses"
+          description: "{{ $labels.application }} is returning sustained server errors."
+
+      - alert: EcommercePaymentFailures
+        expr: |
+          sum(
+            increase(ecommerce_payment_terminal_outcomes_total{service="payment-service",event_type="PaymentFailed",outcome="failed"}[15m])
+          ) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Payment failures recorded"
+          description: "Payment Service emitted terminal PaymentFailed outcomes in the last 15 minutes."
+
+      - alert: EcommerceNotificationFailures
+        expr: |
+          sum by (channel, event_type, outcome) (
+            increase(ecommerce_notification_deliveries_total{service="audit-notification-service",outcome=~"failed|exhausted"}[15m])
+          ) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Mock notification delivery failures"
+          description: "Audit Notification Service recorded failed or exhausted {{ $labels.channel }} deliveries."
+
+      - alert: EcommerceKafkaConsumerFailures
+        expr: |
+          sum by (service, topic, event_type, outcome) (
+            increase(ecommerce_kafka_consumer_events_total{outcome=~"failure|rejected"}[15m])
+          ) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka consumer processing failures"
+          description: "{{ $labels.service }} recorded {{ $labels.outcome }} events for {{ $labels.topic }}."
+
+      - alert: EcommerceDeadLetterTopicRetainedRecords
+        expr: |
+          max by (service, topic) (
+            ecommerce_kafka_dead_letter_topic_depth
+          ) > 0
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka dead-letter topic contains retained records"
+          description: "{{ $labels.service }} dead-letter topic {{ $labels.topic }} has retained records."

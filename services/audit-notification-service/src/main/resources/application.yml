@@ -1,6 +1,27 @@
 spring:
   application:
     name: audit-notification-service
+  data:
+    mongodb:
+      host: ${AUDIT_NOTIFICATION_MONGODB_HOST:localhost}
+      port: ${AUDIT_NOTIFICATION_MONGODB_PORT:27017}
+      database: ${AUDIT_NOTIFICATION_MONGODB_DATABASE:audit}
+      username: ${AUDIT_NOTIFICATION_MONGODB_USERNAME:ecommerce}
+      password: ${AUDIT_NOTIFICATION_MONGODB_PASSWORD:change-me-local-mongo}
+      authentication-database: ${AUDIT_NOTIFICATION_MONGODB_AUTHENTICATION_DATABASE:admin}
+      auto-index-creation: ${AUDIT_NOTIFICATION_MONGODB_AUTO_INDEX_CREATION:true}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      ack-mode: record
+      observation-enabled: true
   security:
     oauth2:
       resourceserver:
@@ -10,6 +31,48 @@ spring:
 
 server:
   port: 8084
+
+audit-notification:
+  kafka:
+    order-created:
+      topic: ${AUDIT_NOTIFICATION_ORDER_CREATED_TOPIC:ecommerce.order.events}
+      group-id: ${AUDIT_NOTIFICATION_ORDER_CREATED_GROUP_ID:audit-notification-service.order-created.v1}
+      enabled: ${AUDIT_NOTIFICATION_ORDER_CREATED_CONSUMER_ENABLED:true}
+      retry:
+        max-attempts: ${AUDIT_NOTIFICATION_ORDER_CREATED_RETRY_MAX_ATTEMPTS:3}
+        backoff: ${AUDIT_NOTIFICATION_ORDER_CREATED_RETRY_BACKOFF:PT1S}
+        dead-letter-topic: ${AUDIT_NOTIFICATION_ORDER_CREATED_DLT_TOPIC:ecommerce.order.events.audit.DLT}
+    payment-results:
+      topic: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_TOPIC:ecommerce.payment.events}
+      group-id: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_GROUP_ID:audit-notification-service.payment-results.v1}
+      enabled: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_CONSUMER_ENABLED:true}
+      retry:
+        max-attempts: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_RETRY_MAX_ATTEMPTS:3}
+        backoff: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_RETRY_BACKOFF:PT1S}
+        dead-letter-topic: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_DLT_TOPIC:ecommerce.payment.events.audit.DLT}
+  notifications:
+    email:
+      enabled: ${AUDIT_NOTIFICATION_EMAIL_ENABLED:true}
+      max-attempts: ${AUDIT_NOTIFICATION_EMAIL_MAX_ATTEMPTS:3}
+      batch-size: ${AUDIT_NOTIFICATION_EMAIL_BATCH_SIZE:50}
+    push:
+      enabled: ${AUDIT_NOTIFICATION_PUSH_ENABLED:true}
+      max-attempts: ${AUDIT_NOTIFICATION_PUSH_MAX_ATTEMPTS:3}
+      batch-size: ${AUDIT_NOTIFICATION_PUSH_BATCH_SIZE:50}
+  observability:
+    dlt-depth:
+      enabled: ${AUDIT_NOTIFICATION_DLT_DEPTH_ENABLED:true}
+      refresh-interval: ${AUDIT_NOTIFICATION_DLT_DEPTH_REFRESH_INTERVAL:PT30S}
+      timeout: ${AUDIT_NOTIFICATION_DLT_DEPTH_TIMEOUT:PT2S}
+      topics:
+        - service: payment-service
+          topic: ${PAYMENT_SERVICE_ORDER_CREATED_DLT_TOPIC:ecommerce.order.events.DLT}
+        - service: order-service
+          topic: ${ORDER_SERVICE_PAYMENT_RESULT_DLT_TOPIC:ecommerce.payment.events.DLT}
+        - service: audit-notification-service
+          topic: ${AUDIT_NOTIFICATION_ORDER_CREATED_DLT_TOPIC:ecommerce.order.events.audit.DLT}
+        - service: audit-notification-service
+          topic: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_DLT_TOPIC:ecommerce.payment.events.audit.DLT}
 
 management:
   endpoints:
@@ -34,4 +97,4 @@ management:
 
 logging:
   pattern:
-    level: '%5p [${spring.application.name},trace=%X{traceId:-},span=%X{spanId:-},correlation=%X{correlationId:-}]'
+    level: '%5p [${spring.application.name},trace=%X{traceId:-},span=%X{spanId:-},correlation=%X{correlationId:-},event=%X{eventId:-},eventType=%X{eventType:-}]'

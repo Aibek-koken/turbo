@@ -21,6 +21,7 @@ spring:
     listener:
       missing-topics-fatal: false
       ack-mode: record
+      observation-enabled: true
   jpa:
     hibernate:
       ddl-auto: validate
@@ -74,4 +75,4 @@ management:
 
 logging:
   pattern:
-    level: '%5p [${spring.application.name},trace=%X{traceId:-},span=%X{spanId:-},correlation=%X{correlationId:-}]'
+    level: '%5p [${spring.application.name},trace=%X{traceId:-},span=%X{spanId:-},correlation=%X{correlationId:-},event=%X{eventId:-},eventType=%X{eventType:-}]'

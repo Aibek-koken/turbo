@@ -19,7 +19,14 @@ import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.test.web.servlet.MockMvc;
 
 @AutoConfigureMockMvc
-@SpringBootTest
+@SpringBootTest(properties = {
+        "management.health.mongo.enabled=false",
+        "audit-notification.mongodb.repositories.enabled=false",
+        "spring.autoconfigure.exclude="
+                + "org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,"
+                + "org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration,"
+                + "org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration"
+})
 class AuditNotificationSecurityConfigurationTest {
 
     @Autowired

@@ -1,5 +1,7 @@
 package com.kora.ecommerce.order.application.payment;
 
+import com.kora.ecommerce.order.observability.OrderOperationalMetrics;
+import io.micrometer.observation.ObservationRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -12,15 +14,22 @@ import org.springframework.stereotype.Component;
 public class PaymentResultKafkaListener {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentResultKafkaListener.class);
+    private static final String PAYMENT_RESULT_EVENT_TYPE = "PaymentResult";
 
     private final PaymentResultEventParser paymentResultEventParser;
     private final PaymentResultOrderUpdater paymentResultOrderUpdater;
+    private final KafkaEventProcessingObservation processingObservation;
+    private final OrderOperationalMetrics metrics;
 
     PaymentResultKafkaListener(
             PaymentResultEventParser paymentResultEventParser,
-            PaymentResultOrderUpdater paymentResultOrderUpdater) {
+            PaymentResultOrderUpdater paymentResultOrderUpdater,
+            ObservationRegistry observationRegistry,
+            OrderOperationalMetrics metrics) {
         this.paymentResultEventParser = paymentResultEventParser;
         this.paymentResultOrderUpdater = paymentResultOrderUpdater;
+        this.processingObservation = new KafkaEventProcessingObservation(observationRegistry);
+        this.metrics = metrics;
     }
 
     @KafkaListener(
@@ -35,9 +44,19 @@ public class PaymentResultKafkaListener {
             @Header(name = KafkaHeaders.OFFSET, required = false) Long offset) {
         try {
             PaymentResultEnvelope event = paymentResultEventParser.parse(payload);
-            PaymentResultHandlingResult result = paymentResultOrderUpdater.handle(event);
-            logResult(result, topic, offset, key);
+            processingObservation.observePaymentResult(event, () -> {
+                try {
+                    PaymentResultHandlingResult result = paymentResultOrderUpdater.handle(event);
+                    metrics.recordKafkaConsumerEvent(topic, event.eventType(), result.status().name());
+                    logResult(result, topic, offset, key);
+                } catch (RuntimeException exception) {
+                    metrics.recordKafkaConsumerEvent(topic, event.eventType(), "failure");
+                    throw exception;
+                }
+                return null;
+            });
         } catch (PaymentResultEventException exception) {
+            metrics.recordKafkaConsumerEvent(topic, PAYMENT_RESULT_EVENT_TYPE, "rejected");
             log.warn(
                     "Rejected payment result event: failure={} detail=\"{}\" topic={} offset={} key={}",
                     exception.failure(),

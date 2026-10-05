@@ -6,6 +6,8 @@ import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
 
+import com.kora.ecommerce.payment.observability.PaymentOperationalMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.Test;
@@ -56,7 +58,10 @@ class PaymentKafkaConsumerConfigurationTest {
         KafkaOperations<Object, Object> kafkaOperations = mock(KafkaOperations.class);
 
         DefaultErrorHandler errorHandler = new PaymentKafkaConsumerConfiguration()
-                .paymentOrderCreatedErrorHandler(kafkaOperations, properties);
+                .paymentOrderCreatedErrorHandler(
+                        kafkaOperations,
+                        properties,
+                        new PaymentOperationalMetrics(new SimpleMeterRegistry()));
 
         assertThat(errorHandler).isNotNull();
     }

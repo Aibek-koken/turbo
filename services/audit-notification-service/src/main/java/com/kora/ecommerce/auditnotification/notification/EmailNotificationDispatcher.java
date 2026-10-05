@@ -1,0 +1,201 @@
+package com.kora.ecommerce.auditnotification.notification;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
+
+import com.kora.ecommerce.auditnotification.observability.EventLoggingContext;
+import com.kora.ecommerce.auditnotification.observability.AuditNotificationOperationalMetrics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
+@Service
+@ConditionalOnProperty(
+        prefix = "audit-notification.mongodb.repositories",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true)
+public class EmailNotificationDispatcher {
+
+    private static final Logger log = LoggerFactory.getLogger(EmailNotificationDispatcher.class);
+    private static final String MAX_ATTEMPTS_EXHAUSTED = "email_max_attempts_exhausted";
+    private static final String PAYLOAD_INVALID = "email_payload_invalid";
+    private static final String ADAPTER_FAILURE = "email_adapter_failure";
+
+    private final NotificationDeliveryRepository repository;
+    private final EmailNotificationPayloadFactory payloadFactory;
+    private final EmailNotificationPort emailPort;
+    private final EmailNotificationProperties properties;
+    private final Clock clock;
+    private final AuditNotificationOperationalMetrics metrics;
+
+    public EmailNotificationDispatcher(
+            NotificationDeliveryRepository repository,
+            EmailNotificationPayloadFactory payloadFactory,
+            EmailNotificationPort emailPort,
+            EmailNotificationProperties properties,
+            Clock clock,
+            AuditNotificationOperationalMetrics metrics) {
+        this.repository = repository;
+        this.payloadFactory = payloadFactory;
+        this.emailPort = emailPort;
+        this.properties = properties;
+        this.clock = clock;
+        this.metrics = metrics;
+    }
+
+    public EmailDeliveryDispatchResult dispatchPendingEmailDeliveries() {
+        if (!properties.isEnabled()) {
+            return EmailDeliveryDispatchResult.empty();
+        }
+
+        List<NotificationDeliveryDocument> pendingDeliveries = repository.findByChannelAndStatus(
+                NotificationChannel.EMAIL,
+                NotificationDeliveryStatus.PENDING,
+                PageRequest.of(
+                        0,
+                        properties.getBatchSize(),
+                        Sort.by(Sort.Direction.ASC, "createdAt")));
+
+        int attempted = 0;
+        int sent = 0;
+        int failed = 0;
+        int skipped = 0;
+        int exhausted = 0;
+        for (NotificationDeliveryDocument delivery : pendingDeliveries) {
+            DeliveryOutcome outcome = dispatchOne(delivery);
+            recordDeliveryMetric(delivery, outcome);
+            switch (outcome) {
+                case SENT -> {
+                    attempted++;
+                    sent++;
+                }
+                case FAILED -> {
+                    attempted++;
+                    failed++;
+                }
+                case MAX_ATTEMPTS_EXHAUSTED -> {
+                    failed++;
+                    exhausted++;
+                }
+                case SKIPPED -> skipped++;
+            }
+        }
+
+        return new EmailDeliveryDispatchResult(
+                pendingDeliveries.size(),
+                attempted,
+                sent,
+                failed,
+                skipped,
+                exhausted);
+    }
+
+    private void recordDeliveryMetric(NotificationDeliveryDocument delivery, DeliveryOutcome outcome) {
+        metrics.recordNotificationDelivery(NotificationChannel.EMAIL, delivery.getEventType(), metricOutcome(outcome));
+    }
+
+    private static String metricOutcome(DeliveryOutcome outcome) {
+        return switch (outcome) {
+            case SENT -> "sent";
+            case FAILED -> "failed";
+            case MAX_ATTEMPTS_EXHAUSTED -> "exhausted";
+            case SKIPPED -> "skipped";
+        };
+    }
+
+    private DeliveryOutcome dispatchOne(NotificationDeliveryDocument delivery) {
+        Objects.requireNonNull(delivery, "delivery must not be null");
+        if (delivery.getChannel() != NotificationChannel.EMAIL
+                || delivery.getStatus() != NotificationDeliveryStatus.PENDING) {
+            return DeliveryOutcome.SKIPPED;
+        }
+        try (EventLoggingContext ignored = EventLoggingContext.open(
+                delivery.getEventId(),
+                delivery.getEventType(),
+                delivery.getEventVersion(),
+                delivery.getOrderId(),
+                delivery.getTraceId(),
+                delivery.getCorrelationId())) {
+            return dispatchPending(delivery);
+        }
+    }
+
+    private DeliveryOutcome dispatchPending(NotificationDeliveryDocument delivery) {
+        if (delivery.getAttemptCount() >= properties.getMaxAttempts()) {
+            Instant exhaustedAt = Instant.now(clock);
+            delivery.markFailed(MAX_ATTEMPTS_EXHAUSTED, exhaustedAt);
+            repository.save(delivery);
+            log.warn(
+                    "email_notification_max_attempts_exhausted eventId={} eventType={} orderId={} paymentId={} attempts={} traceId={} correlationId={}",
+                    delivery.getEventId(),
+                    delivery.getEventType(),
+                    delivery.getOrderId(),
+                    delivery.getPaymentId(),
+                    delivery.getAttemptCount(),
+                    delivery.getTraceId(),
+                    delivery.getCorrelationId());
+            return DeliveryOutcome.MAX_ATTEMPTS_EXHAUSTED;
+        }
+
+        Instant attemptedAt = Instant.now(clock);
+        delivery.markInProgress(attemptedAt);
+        repository.save(delivery);
+
+        try {
+            EmailNotificationPayload payload = payloadFactory.from(delivery);
+            emailPort.send(payload);
+        } catch (EmailNotificationDeliveryException exception) {
+            return failDelivery(delivery, exception.safeFailureDetail());
+        } catch (IllegalArgumentException exception) {
+            return failDelivery(delivery, PAYLOAD_INVALID);
+        } catch (RuntimeException exception) {
+            return failDelivery(delivery, ADAPTER_FAILURE);
+        }
+
+        Instant sentAt = Instant.now(clock);
+        delivery.markSent(sentAt);
+        repository.save(delivery);
+        log.info(
+                "email_notification_delivery_sent eventId={} eventType={} orderId={} paymentId={} attempts={} traceId={} correlationId={}",
+                delivery.getEventId(),
+                delivery.getEventType(),
+                delivery.getOrderId(),
+                delivery.getPaymentId(),
+                delivery.getAttemptCount(),
+                delivery.getTraceId(),
+                delivery.getCorrelationId());
+        return DeliveryOutcome.SENT;
+    }
+
+    private DeliveryOutcome failDelivery(
+            NotificationDeliveryDocument delivery,
+            String safeFailureDetail) {
+        Instant failedAt = Instant.now(clock);
+        delivery.markFailed(safeFailureDetail, failedAt);
+        repository.save(delivery);
+        log.warn(
+                "email_notification_delivery_failed eventId={} eventType={} orderId={} paymentId={} attempts={} failure={} traceId={} correlationId={}",
+                delivery.getEventId(),
+                delivery.getEventType(),
+                delivery.getOrderId(),
+                delivery.getPaymentId(),
+                delivery.getAttemptCount(),
+                delivery.getSafeFailureDetail(),
+                delivery.getTraceId(),
+                delivery.getCorrelationId());
+        return DeliveryOutcome.FAILED;
+    }
+
+    private enum DeliveryOutcome {
+        SENT,
+        FAILED,
+        MAX_ATTEMPTS_EXHAUSTED,
+        SKIPPED
+    }
+}
