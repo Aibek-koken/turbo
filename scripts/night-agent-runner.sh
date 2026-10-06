@@ -39,7 +39,7 @@ Options:
   --continue-on-pass         Continue after a clean task.
   --auto-wait-limits         Wait and retry if the agent hits a usage/session limit.
   --auto-commit              Commit approved task files after validation. Never pushes.
-  --phase PHASE              Restrict to one phase, for example sprint5.
+  --phase PHASE              Restrict to one phase, for example sprint6.
   --phases LIST              Restrict to comma-separated phases.
   --queue PATH               Queue file path.
   --handoff PATH             Handoff file path.
@@ -64,7 +64,7 @@ while [ "$#" -gt 0 ]; do
     --queue) QUEUE_FILE="${2:?--queue requires a path}"; shift 2 ;;
     --handoff) HANDOFF_FILE="${2:?--handoff requires a path}"; shift 2 ;;
     --overnight)
-      PHASE_FILTERS="sprint1,sprint2,sprint3,sprint4,sprint5"
+      PHASE_FILTERS="sprint1,sprint2,sprint3,sprint4,sprint5,sprint6"
       CONTINUE_ON_PASS=1
       MAX_TASKS=99
       MAX_MINUTES=28800
@@ -123,13 +123,14 @@ task_phase() {
     ECOM-016|ECOM-017|ECOM-018|ECOM-019|ECOM-020|ECOM-021|ECOM-022) echo "sprint3" ;;
     ECOM-023|ECOM-024|ECOM-025|ECOM-026|ECOM-027|ECOM-028|ECOM-029|ECOM-030) echo "sprint4" ;;
     ECOM-031|ECOM-032|ECOM-033|ECOM-034|ECOM-035|ECOM-036|ECOM-037|ECOM-038|ECOM-039) echo "sprint5" ;;
+    ECOM-040|ECOM-041|ECOM-042|ECOM-043|ECOM-044|ECOM-045|ECOM-046|ECOM-047|ECOM-048|ECOM-049|ECOM-050|ECOM-051|ECOM-052) echo "sprint6" ;;
     *) echo "unknown" ;;
   esac
 }
 
 phase_is_requested() {
   local candidate="$1"
-  local raw="${PHASE_FILTERS:-sprint1,sprint2,sprint3,sprint4,sprint5}"
+  local raw="${PHASE_FILTERS:-sprint1,sprint2,sprint3,sprint4,sprint5,sprint6}"
   local old_ifs="$IFS"
   local phase
   IFS=','
@@ -288,7 +289,7 @@ write_handoff() {
   {
     echo "# Night Agent Handoff"
     echo
-    echo "Requested phases: ${PHASE_FILTERS:-sprint1,sprint2,sprint3,sprint4,sprint5}"
+    echo "Requested phases: ${PHASE_FILTERS:-sprint1,sprint2,sprint3,sprint4,sprint5,sprint6}"
     echo "Current task: $current_task"
     echo "Last completed task: ${last_completed:-none}"
     echo "Last status: $status"
@@ -419,7 +420,7 @@ while [ "$completed" -lt "$MAX_TASKS" ]; do
     else
       echo "$AGENT_BIN --print --permission-mode acceptEdits < $prompt_file"
     fi
-    echo "Phases: ${PHASE_FILTERS:-sprint1,sprint2,sprint3,sprint4,sprint5}"
+    echo "Phases: ${PHASE_FILTERS:-sprint1,sprint2,sprint3,sprint4,sprint5,sprint6}"
     echo "Auto wait limits: $AUTO_WAIT_LIMITS"
     echo "Auto commit: $AUTO_COMMIT"
     exit 0

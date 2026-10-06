@@ -12,10 +12,11 @@ Primary target:
 - Sprint 2 complete: US-06 through US-10.
 - Sprint 3 complete: US-11 through US-15.
 - Sprint 4 complete: US-16 through US-20.
-- Complete Sprint 5: US-21 through US-25.
+- Sprint 5 complete: US-21 through US-25.
+- Complete Sprint 6: US-26 through US-30.
 
-Do not continue into Sprint 6 broad E2E/Testcontainers, load/resilience,
-one-command deployment or CI work unless the queue is explicitly extended.
+Do not add work beyond the Sprint 6 release target unless the queue is
+explicitly extended.
 
 ## Shared Rules
 
@@ -56,6 +57,391 @@ Allowed files:
 
 Validation:
 - `scripts/project-validate.sh structure`
+<!-- /task -->
+
+<!-- task:id=ECOM-040 phase=sprint6 status=pending -->
+## ECOM-040: Add Testcontainers foundation and PostgreSQL integration suites
+
+Status: pending
+
+Story coverage:
+- US-26 Integration Tests with Testcontainers
+
+Scope:
+- Add an opt-in Maven integration-test profile using a pinned Testcontainers BOM/version and Failsafe-style `*IT` execution without slowing the default unit-test loop.
+- Add real PostgreSQL container coverage for the Catalog, Order and Payment owned schemas, Flyway migrations, repository constraints and representative persistence flows.
+- Start isolated databases dynamically and wire service properties through supported Spring test mechanisms; do not depend on locally running PostgreSQL or fixed host ports.
+- Keep each service responsible for its own schema tests and avoid a shared business database or shared JPA domain module.
+- Ensure containers and temporary data are cleaned up by the test lifecycle without deleting developer Docker volumes.
+- Document the opt-in command and clear Docker prerequisite/failure behavior.
+- Do not add Redis, Kafka, MongoDB or full end-to-end coverage yet.
+
+Allowed files:
+- `pom.xml`
+- `services/catalog-service/**`
+- `services/order-service/**`
+- `services/payment-service/**`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh integration-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-041 phase=sprint6 status=pending -->
+## ECOM-041: Verify Redis cache and lock behavior with Testcontainers
+
+Status: pending
+
+Story coverage:
+- US-26 Integration Tests with Testcontainers
+
+Scope:
+- Add real Redis Testcontainers coverage for Catalog product-detail cache serialization, cache-aside reads, invalidation and Redisson lock behavior.
+- Prove a cache miss populates Redis and a subsequent read uses the cached value while a product update invalidates the relevant entry.
+- Add a bounded concurrent-miss test that demonstrates one protected database load without timing-sensitive unbounded stress.
+- Use dynamic container endpoints and the existing cache configuration; do not depend on localhost Redis or fixed ports.
+- Keep unit tests fast and retain graceful no-Redis behavior outside the opt-in integration profile.
+- Do not add load testing or change production cache semantics unless a demonstrated integration defect requires a scoped fix.
+
+Allowed files:
+- `pom.xml`
+- `services/catalog-service/**`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh integration-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-042 phase=sprint6 status=pending -->
+## ECOM-042: Verify Kafka event processing with Testcontainers
+
+Status: pending
+
+Story coverage:
+- US-26 Integration Tests with Testcontainers
+
+Scope:
+- Add real Kafka Testcontainers coverage for the Payment `OrderCreated` consumer, Order payment-result consumer and Audit order/payment consumers.
+- Exercise representative valid, duplicate and malformed deliveries through Kafka listener containers rather than calling listener methods directly.
+- Verify persisted outcomes, idempotent replay behavior and bounded dead-letter routing for poison messages using isolated topics and consumer groups.
+- Use dynamic broker endpoints and deterministic polling/timeouts; do not use fixed sleeps or depend on locally running Kafka.
+- Keep event contracts versioned and service-owned, and do not bypass existing parser, retry or persistence boundaries.
+- Do not attempt the complete Gateway-to-notification E2E flow yet.
+
+Allowed files:
+- `pom.xml`
+- `services/order-service/**`
+- `services/payment-service/**`
+- `services/audit-notification-service/**`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh integration-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-043 phase=sprint6 status=pending -->
+## ECOM-043: Verify Mongo audit and notification persistence with Testcontainers
+
+Status: pending
+
+Story coverage:
+- US-26 Integration Tests with Testcontainers
+
+Scope:
+- Add real MongoDB Testcontainers coverage for audit event persistence, indexes, duplicate event handling and notification delivery ledger uniqueness.
+- Verify searchable event metadata and complete structured payloads survive a real BSON round trip.
+- Exercise replay recovery for missing or failed channel deliveries while proving completed email/push delivery records are not duplicated.
+- Use a dynamic MongoDB connection and isolated database; do not require the local Compose MongoDB instance.
+- Keep mock notification adapters local and deterministic with no real contact data, credentials or external provider calls.
+- Do not add the complete cross-service E2E flow yet.
+
+Allowed files:
+- `pom.xml`
+- `services/audit-notification-service/**`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh integration-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-044 phase=sprint6 status=pending -->
+## ECOM-044: Containerize application services and the mock payment provider
+
+Status: pending
+
+Story coverage:
+- US-29 One-Command Full Environment
+
+Scope:
+- Add reproducible multi-stage container builds for Gateway, Catalog, Order, Payment and Audit Notification services using Java 21 runtime images and non-root execution where practical.
+- Add a deterministic local mock payment-provider container or bounded mock service that supports approved, declined, timeout and 5xx scenarios required by existing Payment behavior.
+- Extend Docker Compose with all five application services and the mock provider using internal service DNS, environment placeholders, health checks and explicit dependencies.
+- Keep external host ports configurable and preserve service-owned database, Kafka, MongoDB, Keycloak and observability boundaries.
+- Add an appropriate root `.dockerignore` and avoid copying local build output, VCS data, secrets or agent logs into images.
+- Do not add production deployment manifests, registries or cloud credentials.
+
+Allowed files:
+- `.dockerignore`
+- `.env.example`
+- `pom.xml`
+- `docker-compose.yml`
+- `services/**`
+- `infra/mock-payment-provider/**`
+- `infra/README.md`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh full-stack-config`
+<!-- /task -->
+
+<!-- task:id=ECOM-045 phase=sprint6 status=pending -->
+## ECOM-045: Complete one-command startup and full-stack smoke validation
+
+Status: pending
+
+Story coverage:
+- US-29 One-Command Full Environment
+
+Scope:
+- Make `docker compose up --build` start the complete local platform from a clean clone without manual application-process startup.
+- Add bounded idempotent bootstrap for both Debezium outbox connectors after PostgreSQL, Kafka and Connect are healthy.
+- Ensure service health checks and dependency conditions reflect actual readiness without masking permanently failed services.
+- Add a bounded full-stack smoke script that waits with a deadline, verifies Keycloak, Gateway, all services, connector status, Prometheus and Jaeger, and reports actionable failures.
+- Keep cleanup opt-in and non-destructive; the smoke check must not delete developer volumes or application data.
+- Update local setup documentation and environment placeholders for the exact one-command workflow.
+- Do not add the authenticated purchase E2E scenario yet.
+
+Allowed files:
+- `.env.example`
+- `docker-compose.yml`
+- `infra/**`
+- `scripts/bootstrap-debezium-connectors.sh`
+- `scripts/verify-full-stack.sh`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh full-stack-config`
+- `scripts/project-validate.sh full-stack-smoke`
+<!-- /task -->
+
+<!-- task:id=ECOM-046 phase=sprint6 status=pending -->
+## ECOM-046: Add producer-consumer event contract tests
+
+Status: pending
+
+Story coverage:
+- US-27 Contract & Full End-to-End Tests
+
+Scope:
+- Add executable compatibility tests for the version-1 `OrderCreated`, `PaymentSucceeded` and `PaymentFailed` JSON envelopes across their actual producers and consumers.
+- Verify required envelope fields, aggregate/order consistency, money/currency representation, trace/correlation metadata and supported event versions.
+- Use representative producer output as consumer input so schema drift fails before full-stack E2E execution.
+- Keep contracts additive and service boundaries explicit; do not create a shared business-domain module or silently loosen consumer validation.
+- Add an opt-in contract-test profile or focused test command that is deterministic and does not require the full Compose stack.
+- Document how to run the contract suite locally.
+
+Allowed files:
+- `pom.xml`
+- `libs/**`
+- `services/order-service/**`
+- `services/payment-service/**`
+- `services/audit-notification-service/**`
+- `tests/**`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh contract-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-047 phase=sprint6 status=pending -->
+## ECOM-047: Add authenticated purchase-flow end-to-end tests
+
+Status: pending
+
+Story coverage:
+- US-27 Contract & Full End-to-End Tests
+
+Scope:
+- Add a bounded black-box E2E harness against the full Compose stack using tokens obtained from the local Keycloak realm and all external REST traffic through Gateway.
+- Create deterministic catalog fixtures through authorized APIs, place a customer order and wait through CDC/Kafka processing until the order reaches `PAID`.
+- Verify the corresponding Payment state, MongoDB audit records and exactly-once mock email/push delivery evidence without reaching into service implementation classes.
+- Add a deterministic provider-decline scenario ending in `PAYMENT_FAILED` with consistent order, payment, audit and notification state.
+- Prove replay/duplicate safety for the tested flow without charging or notifying twice.
+- Use deadlines and diagnostic output instead of fixed long sleeps; keep teardown non-destructive unless the harness created the isolated project explicitly.
+- Never embed real tokens, passwords or customer contact data.
+
+Allowed files:
+- `.env.example`
+- `pom.xml`
+- `tests/**`
+- `scripts/run-e2e-tests.sh`
+- `infra/keycloak/**`
+- `infra/mock-payment-provider/**`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh e2e-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-048 phase=sprint6 status=pending -->
+## ECOM-048: Add bounded load and cache-effect validation
+
+Status: pending
+
+Story coverage:
+- US-28 Load & Resilience Validation
+
+Scope:
+- Add a versioned, bounded local load scenario for health-safe Catalog browse/detail traffic through Gateway with configurable virtual users, duration and base URL.
+- Record latency percentiles, throughput and error rate with explicit smoke thresholds suitable for a developer machine and CI smoke mode.
+- Compare cold and warm product-detail reads using existing cache hit/miss and database-observation evidence to demonstrate that cache use reduces repeated database work.
+- Include a small virtual-thread concurrency scenario or observation that validates the configured runtime behavior without claiming production capacity.
+- Store scripts and human-readable run instructions, not generated result archives or machine-specific reports.
+- Cap defaults and require explicit opt-in for higher load; do not run unbounded stress or destructive data generation.
+
+Allowed files:
+- `tests/load/**`
+- `scripts/run-load-validation.sh`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh load-smoke`
+<!-- /task -->
+
+<!-- task:id=ECOM-049 phase=sprint6 status=pending -->
+## ECOM-049: Add restart and replay resilience validation
+
+Status: pending
+
+Story coverage:
+- US-28 Load & Resilience Validation
+
+Scope:
+- Add bounded local resilience scenarios for a temporary Payment or Audit service restart and a temporary Kafka interruption during an in-flight purchase.
+- Verify recovery completes without corrupt order/payment state, duplicate provider attempts, duplicate terminal events or duplicate completed notifications.
+- Exercise existing retry, DLT and idempotency boundaries and report the observed recovery timeline and final consistency checks.
+- Use explicit deadlines, unique test identifiers and targeted Compose operations; do not delete volumes, reset databases or disrupt unrelated Docker projects.
+- Make the smoke mode safe for a developer machine and keep longer fault windows explicitly opt-in.
+- Document prerequisites, recovery expectations and troubleshooting output.
+
+Allowed files:
+- `docker-compose.yml`
+- `tests/resilience/**`
+- `scripts/run-resilience-validation.sh`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh resilience-smoke`
+<!-- /task -->
+
+<!-- task:id=ECOM-050 phase=sprint6 status=pending -->
+## ECOM-050: Publish OpenAPI documentation for external APIs
+
+Status: pending
+
+Story coverage:
+- US-30 API, Architecture Documentation & CI Release
+
+Scope:
+- Add compatible Springdoc OpenAPI support for externally useful Catalog, Order, Payment and Audit/Notification HTTP APIs while preserving existing security rules.
+- Describe bearer JWT security, role expectations, request/response schemas, pagination and Problem Details responses where applicable.
+- Ensure OpenAPI JSON and Swagger UI endpoints are reachable in the local environment through documented service URLs or intentional Gateway routes.
+- Keep actuator and internal-only implementation details out of the public API description.
+- Add focused tests for document availability, key operations and security configuration without weakening production endpoint authorization.
+- Update README/API documentation links.
+
+Allowed files:
+- `pom.xml`
+- `services/gateway-service/**`
+- `services/catalog-service/**`
+- `services/order-service/**`
+- `services/payment-service/**`
+- `services/audit-notification-service/**`
+- `docs/**`
+- `README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh api-docs-test`
+<!-- /task -->
+
+<!-- task:id=ECOM-051 phase=sprint6 status=pending -->
+## ECOM-051: Complete architecture, ERD, setup and demo documentation
+
+Status: pending
+
+Story coverage:
+- US-30 API, Architecture Documentation & CI Release
+
+Scope:
+- Update the root README with prerequisites, one-command startup, validation commands, API documentation links and a concise authenticated demo flow.
+- Add `docs/architecture.md` showing service/data ownership, synchronous calls, both outbox/CDC paths, Kafka consumers, observability and security boundaries.
+- Add `docs/data-model.md` with ERDs or schema documentation for Catalog, Order, Payment and Mongo audit/notification persistence using text-based source that is reviewable in Git.
+- Add `docs/demo-runbook.md` for the authenticated happy path, payment-failure demonstration and expected audit/notification evidence.
+- Consolidate operational runbook links for health, metrics, traces, connector status, DLT inspection, E2E, load and resilience checks.
+- Verify all documentation commands and relative links against the repository; remove stale statements such as services being only future skeletons.
+- Do not modify the source PDF/XLSX or add generated binary documentation artifacts.
+
+Allowed files:
+- `README.md`
+- `DESIGN.md`
+- `docs/**`
+- `infra/README.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh docs-check`
+<!-- /task -->
+
+<!-- task:id=ECOM-052 phase=sprint6 status=pending -->
+## ECOM-052: Add CI pipeline and final release-readiness checks
+
+Status: pending
+
+Story coverage:
+- US-30 API, Architecture Documentation & CI Release
+
+Scope:
+- Add a CI workflow for Java 21 that restores Maven dependencies safely, runs unit tests, opt-in integration/contract suites and repository configuration checks from a fresh checkout.
+- Add bounded E2E or full-stack smoke coverage in CI when Docker is available, with clear timeouts and uploaded diagnostics on failure.
+- Validate Docker Compose configuration and application image builds without publishing images or requiring registry credentials.
+- Add concurrency cancellation and least-privilege workflow permissions; pin major action versions and avoid untrusted secret exposure.
+- Add a final release-readiness command that checks required docs, OpenAPI tests, Compose configuration and Maven suites without modifying source or pushing artifacts.
+- Update `STATE.md` and handoff with Sprint 6 completion, exact validations and any intentionally manual long-running load/resilience steps.
+- Do not create releases, tags, commits or pushes from the night agent.
+
+Allowed files:
+- `.github/**`
+- `pom.xml`
+- `scripts/**`
+- `docs/**`
+- `README.md`
+- `DESIGN.md`
+- `STATE.md`
+
+Validation:
+- `scripts/project-validate.sh ci-config`
+- `scripts/project-validate.sh release-check`
 <!-- /task -->
 
 <!-- task:id=ECOM-002 phase=sprint1 status=done -->

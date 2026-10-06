@@ -53,6 +53,7 @@ task_phase() {
     ECOM-016|ECOM-017|ECOM-018|ECOM-019|ECOM-020|ECOM-021|ECOM-022) echo "sprint3" ;;
     ECOM-023|ECOM-024|ECOM-025|ECOM-026|ECOM-027|ECOM-028|ECOM-029|ECOM-030) echo "sprint4" ;;
     ECOM-031|ECOM-032|ECOM-033|ECOM-034|ECOM-035|ECOM-036|ECOM-037|ECOM-038|ECOM-039) echo "sprint5" ;;
+    ECOM-040|ECOM-041|ECOM-042|ECOM-043|ECOM-044|ECOM-045|ECOM-046|ECOM-047|ECOM-048|ECOM-049|ECOM-050|ECOM-051|ECOM-052) echo "sprint6" ;;
     *) echo "unknown"; return 1 ;;
   esac
 }
@@ -64,6 +65,7 @@ context_pack_for_task() {
     sprint3) echo "docs/night-runner/sprint3-context-pack.md" ;;
     sprint4) echo "docs/night-runner/sprint4-context-pack.md" ;;
     sprint5) echo "docs/night-runner/sprint5-context-pack.md" ;;
+    sprint6) echo "docs/night-runner/sprint6-context-pack.md" ;;
     *) return 1 ;;
   esac
 }
@@ -356,6 +358,167 @@ docker-compose.yml
 .env.example
 docs/observability-runbook.md
 docs/night-runner/sprint5-context-pack.md
+EOF
+      ;;
+    ECOM-040)
+      cat <<'EOF'
+pom.xml
+services/catalog-service/pom.xml
+services/catalog-service/src/main/resources/db/migration
+services/catalog-service/src/test
+services/order-service/pom.xml
+services/order-service/src/main/resources/db/migration
+services/order-service/src/test
+services/payment-service/pom.xml
+services/payment-service/src/main/resources/db/migration
+services/payment-service/src/test
+docs/night-runner/sprint6-context-pack.md
+EOF
+      ;;
+    ECOM-041)
+      cat <<'EOF'
+pom.xml
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/cache
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/service
+services/catalog-service/src/main/resources/application.yml
+services/catalog-service/src/test
+docs/night-runner/sprint6-context-pack.md
+EOF
+      ;;
+    ECOM-042)
+      cat <<'EOF'
+pom.xml
+services/order-service/src/main/java/com/kora/ecommerce/order/application/payment
+services/order-service/src/main/java/com/kora/ecommerce/order/config
+services/payment-service/src/main/java/com/kora/ecommerce/payment/messaging
+services/payment-service/src/main/java/com/kora/ecommerce/payment/config
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification/messaging
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification/config
+docs/night-runner/sprint6-context-pack.md
+EOF
+      ;;
+    ECOM-043)
+      cat <<'EOF'
+pom.xml
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification/persistence
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification/notification
+services/audit-notification-service/src/main/resources/application.yml
+services/audit-notification-service/src/test
+docs/night-runner/sprint6-context-pack.md
+EOF
+      ;;
+    ECOM-044)
+      cat <<'EOF'
+pom.xml
+docker-compose.yml
+.env.example
+services/gateway-service/pom.xml
+services/catalog-service/pom.xml
+services/order-service/pom.xml
+services/payment-service/pom.xml
+services/audit-notification-service/pom.xml
+services/gateway-service/src/main/resources/application.yml
+services/catalog-service/src/main/resources/application.yml
+services/order-service/src/main/resources/application.yml
+services/payment-service/src/main/resources/application.yml
+services/audit-notification-service/src/main/resources/application.yml
+docs/night-runner/sprint6-context-pack.md
+EOF
+      ;;
+    ECOM-045)
+      cat <<'EOF'
+docker-compose.yml
+.env.example
+infra/debezium/order-outbox-connector.json
+infra/debezium/payment-outbox-connector.json
+scripts/register-order-outbox-connector.sh
+scripts/register-payment-outbox-connector.sh
+infra/README.md
+docs/developer-setup.md
+docs/night-runner/sprint6-context-pack.md
+EOF
+      ;;
+    ECOM-046)
+      cat <<'EOF'
+pom.xml
+services/order-service/src/main/java/com/kora/ecommerce/order/application/OrderCreatedOutboxEventFactory.java
+services/payment-service/src/main/java/com/kora/ecommerce/payment/order
+services/payment-service/src/main/java/com/kora/ecommerce/payment/application/PaymentResultOutboxEventFactory.java
+services/order-service/src/main/java/com/kora/ecommerce/order/application/payment
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification/order
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification/payment
+docs/night-runner/sprint6-context-pack.md
+EOF
+      ;;
+    ECOM-047)
+      cat <<'EOF'
+docker-compose.yml
+.env.example
+infra/keycloak/ecommerce-realm.json
+services/gateway-service/src/main/resources/application.yml
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api
+services/order-service/src/main/java/com/kora/ecommerce/order/api
+services/payment-service/src/main/java/com/kora/ecommerce/payment
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification
+docs/keycloak-local.md
+docs/night-runner/sprint6-context-pack.md
+EOF
+      ;;
+    ECOM-048)
+      cat <<'EOF'
+docker-compose.yml
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/cache
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/observability
+docs/observability-runbook.md
+docs/night-runner/sprint6-context-pack.md
+EOF
+      ;;
+    ECOM-049)
+      cat <<'EOF'
+docker-compose.yml
+services/order-service/src/main/java/com/kora/ecommerce/order/application/payment
+services/payment-service/src/main/java/com/kora/ecommerce/payment
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification
+docs/observability-runbook.md
+docs/night-runner/sprint6-context-pack.md
+EOF
+      ;;
+    ECOM-050)
+      cat <<'EOF'
+pom.xml
+services/gateway-service
+services/catalog-service/src/main/java/com/kora/ecommerce/catalog/api
+services/order-service/src/main/java/com/kora/ecommerce/order/api
+services/payment-service/src/main/java/com/kora/ecommerce/payment/api
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification/api
+docs/service-rbac.md
+docs/night-runner/sprint6-context-pack.md
+EOF
+      ;;
+    ECOM-051)
+      cat <<'EOF'
+README.md
+DESIGN.md
+infra/README.md
+docs
+docker-compose.yml
+services/catalog-service/src/main/resources/db/migration
+services/order-service/src/main/resources/db/migration
+services/payment-service/src/main/resources/db/migration
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification/persistence
+services/audit-notification-service/src/main/java/com/kora/ecommerce/auditnotification/notification
+docs/night-runner/sprint6-context-pack.md
+EOF
+      ;;
+    ECOM-052)
+      cat <<'EOF'
+pom.xml
+.github
+scripts/project-validate.sh
+docker-compose.yml
+README.md
+docs
+docs/night-runner/sprint6-context-pack.md
 EOF
       ;;
   esac

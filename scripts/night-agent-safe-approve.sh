@@ -248,6 +248,150 @@ README.md
 STATE.md
 EOF
       ;;
+    ECOM-040)
+      cat <<'EOF'
+pom.xml
+services/catalog-service/**
+services/order-service/**
+services/payment-service/**
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-041)
+      cat <<'EOF'
+pom.xml
+services/catalog-service/**
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-042)
+      cat <<'EOF'
+pom.xml
+services/order-service/**
+services/payment-service/**
+services/audit-notification-service/**
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-043)
+      cat <<'EOF'
+pom.xml
+services/audit-notification-service/**
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-044)
+      cat <<'EOF'
+.dockerignore
+.env.example
+pom.xml
+docker-compose.yml
+services/**
+infra/mock-payment-provider/**
+infra/README.md
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-045)
+      cat <<'EOF'
+.env.example
+docker-compose.yml
+infra/**
+scripts/bootstrap-debezium-connectors.sh
+scripts/verify-full-stack.sh
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-046)
+      cat <<'EOF'
+pom.xml
+libs/**
+services/order-service/**
+services/payment-service/**
+services/audit-notification-service/**
+tests/**
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-047)
+      cat <<'EOF'
+.env.example
+pom.xml
+tests/**
+scripts/run-e2e-tests.sh
+infra/keycloak/**
+infra/mock-payment-provider/**
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-048)
+      cat <<'EOF'
+tests/load/**
+scripts/run-load-validation.sh
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-049)
+      cat <<'EOF'
+docker-compose.yml
+tests/resilience/**
+scripts/run-resilience-validation.sh
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-050)
+      cat <<'EOF'
+pom.xml
+services/gateway-service/**
+services/catalog-service/**
+services/order-service/**
+services/payment-service/**
+services/audit-notification-service/**
+docs/**
+README.md
+STATE.md
+EOF
+      ;;
+    ECOM-051)
+      cat <<'EOF'
+README.md
+DESIGN.md
+docs/**
+infra/README.md
+STATE.md
+EOF
+      ;;
+    ECOM-052)
+      cat <<'EOF'
+.github/**
+pom.xml
+scripts/**
+docs/**
+README.md
+DESIGN.md
+STATE.md
+EOF
+      ;;
     *)
       return 1
       ;;

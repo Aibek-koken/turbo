@@ -148,6 +148,18 @@ case "$MODE" in
       -pl services/catalog-service,services/order-service,services/payment-service,services/audit-notification-service \
       -am test
     ;;
+  integration-test)
+    need_file pom.xml
+    need_dir services/catalog-service
+    need_dir services/order-service
+    need_dir services/payment-service
+    need_dir services/audit-notification-service
+    mvn_cmd -q -Pintegration-tests verify
+    ;;
+  contract-test)
+    need_file pom.xml
+    mvn_cmd -q -Pcontract-tests verify
+    ;;
   order-cdc-config)
     need_file docker-compose.yml
     need_file infra/debezium/order-outbox-connector.json
@@ -218,6 +230,100 @@ case "$MODE" in
       echo "Docker Compose is not available." >&2
       exit 2
     fi
+    ;;
+  full-stack-config)
+    need_file docker-compose.yml
+    need_file services/gateway-service/Dockerfile
+    need_file services/catalog-service/Dockerfile
+    need_file services/order-service/Dockerfile
+    need_file services/payment-service/Dockerfile
+    need_file services/audit-notification-service/Dockerfile
+    need_dir infra/mock-payment-provider
+    for service in gateway-service catalog-service order-service payment-service audit-notification-service mock-payment-provider; do
+      if ! grep -Eq "^[[:space:]]{2}${service}:" docker-compose.yml; then
+        echo "Docker Compose does not define $service." >&2
+        exit 2
+      fi
+    done
+    if docker compose version >/dev/null 2>&1; then
+      docker compose config >/dev/null
+    else
+      echo "Docker Compose is not available." >&2
+      exit 2
+    fi
+    ;;
+  full-stack-smoke)
+    need_file scripts/verify-full-stack.sh
+    bash scripts/verify-full-stack.sh
+    ;;
+  e2e-test)
+    need_file scripts/run-e2e-tests.sh
+    bash scripts/run-e2e-tests.sh
+    ;;
+  load-smoke)
+    need_file scripts/run-load-validation.sh
+    bash scripts/run-load-validation.sh --smoke
+    ;;
+  resilience-smoke)
+    need_file scripts/run-resilience-validation.sh
+    bash scripts/run-resilience-validation.sh --smoke
+    ;;
+  api-docs-test)
+    need_file pom.xml
+    mvn_cmd -q test
+    ;;
+  docs-check)
+    need_file README.md
+    need_file DESIGN.md
+    need_file docs/architecture.md
+    need_file docs/data-model.md
+    need_file docs/demo-runbook.md
+    for doc in docs/architecture.md docs/data-model.md docs/demo-runbook.md docs/observability-runbook.md; do
+      if ! grep -Fq "${doc#docs/}" README.md && ! grep -Fq "$doc" README.md; then
+        echo "README does not link $doc." >&2
+        exit 2
+      fi
+    done
+    ;;
+  ci-config)
+    need_file .github/workflows/ci.yml
+    if ! grep -Eq "java-version:[[:space:]]*['\"]?21" .github/workflows/ci.yml; then
+      echo "CI does not select Java 21." >&2
+      exit 2
+    fi
+    if ! grep -Eq '(mvn|mvnw).*(test|verify)' .github/workflows/ci.yml; then
+      echo "CI does not run Maven tests or verification." >&2
+      exit 2
+    fi
+    if ! grep -Eq 'docker compose config' .github/workflows/ci.yml; then
+      echo "CI does not validate Docker Compose configuration." >&2
+      exit 2
+    fi
+    ;;
+  night-runner-config)
+    need_file docs/night-runner/sprint6-context-pack.md
+    need_file docs/night-runner/task-queue.md
+    need_file scripts/night-agent-prompt-builder.sh
+    need_file scripts/night-agent-runner.sh
+    need_file scripts/night-agent-safe-approve.sh
+    need_file scripts/night-agent-status.sh
+    bash -n scripts/night-agent-prompt-builder.sh
+    bash -n scripts/night-agent-runner.sh
+    bash -n scripts/night-agent-safe-approve.sh
+    bash -n scripts/night-agent-status.sh
+    if ! grep -Eq 'task:id=ECOM-040 phase=sprint6 status=pending' docs/night-runner/task-queue.md; then
+      echo "Sprint 6 first task is not pending in the queue." >&2
+      exit 2
+    fi
+    scripts/night-agent-prompt-builder.sh ECOM-040 >/dev/null
+    ;;
+  release-check)
+    "$0" structure
+    "$0" compose-config
+    "$0" full-stack-config
+    "$0" docs-check
+    "$0" ci-config
+    mvn_cmd -q test
     ;;
   *)
     echo "Unknown validation mode: $MODE" >&2

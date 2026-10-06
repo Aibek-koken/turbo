@@ -4,6 +4,18 @@ Last updated: 2026-10-06
 
 ## Current Status
 
+Sprint 6 night-runner workflow is prepared but no Sprint 6 implementation has
+started. The queue now contains pending tasks ECOM-040 through ECOM-052 for an
+opt-in Testcontainers integration profile, real PostgreSQL/Redis/Kafka/MongoDB
+coverage, application container images and a local mock payment provider,
+one-command full-stack startup, event contract and authenticated E2E tests,
+bounded load/restart resilience validation, OpenAPI, architecture/ERD/demo
+documentation and a Java 21 CI/release-readiness pipeline.
+`docs/night-runner/sprint6-context-pack.md` is the compact source of truth for
+those night sessions. Runner, prompt builder, safe-approval, status and
+validation scripts recognize the new phase. Sprint 6 implementation remains
+untouched. Next task: ECOM-040.
+
 ECOM-039 is complete. Audit Notification Service now exposes a bounded
 Micrometer gauge, `ecommerce.kafka.dead.letter.topic.depth`, for the fixed
 configured Order, Payment and Audit Notification dead-letter topics. The gauge

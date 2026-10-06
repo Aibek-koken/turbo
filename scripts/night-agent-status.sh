@@ -10,13 +10,14 @@ task_phase() {
     ECOM-016|ECOM-017|ECOM-018|ECOM-019|ECOM-020|ECOM-021|ECOM-022) echo "sprint3" ;;
     ECOM-023|ECOM-024|ECOM-025|ECOM-026|ECOM-027|ECOM-028|ECOM-029|ECOM-030) echo "sprint4" ;;
     ECOM-031|ECOM-032|ECOM-033|ECOM-034|ECOM-035|ECOM-036|ECOM-037|ECOM-038|ECOM-039) echo "sprint5" ;;
+    ECOM-040|ECOM-041|ECOM-042|ECOM-043|ECOM-044|ECOM-045|ECOM-046|ECOM-047|ECOM-048|ECOM-049|ECOM-050|ECOM-051|ECOM-052) echo "sprint6" ;;
     *) echo "unknown" ;;
   esac
 }
 
 echo "== E-Commerce night task queue =="
 if [ -f "$QUEUE_FILE" ]; then
-  sed -n 's/.*task:id=\([^ ]*\).*status=\([^ ]*\).*/\1 \2/p' "$QUEUE_FILE" | while read -r task status; do
+  sed -n 's/.*task:id=\([^ ]*\).*status=\([^ ]*\).*/\1 \2/p' "$QUEUE_FILE" | sort | while read -r task status; do
     printf '%-9s %-8s %s\n' "$task" "$(task_phase "$task")" "$status"
   done
 else
@@ -76,5 +77,5 @@ fi
 
 echo
 echo "== Suggested commands =="
-echo "scripts/night-agent-runner.sh --agent codex --overnight --phase sprint5 --max-minutes 28800 --dry-run"
-echo "scripts/night-agent-runner.sh --agent codex --overnight --phase sprint5 --max-minutes 28800"
+echo "scripts/night-agent-runner.sh --agent codex --overnight --phase sprint6 --max-minutes 28800 --dry-run"
+echo "scripts/night-agent-runner.sh --agent codex --overnight --phase sprint6 --max-minutes 28800"

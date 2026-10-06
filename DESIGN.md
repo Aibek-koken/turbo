@@ -117,6 +117,16 @@ Initial events:
 24. End-to-end REST/Kafka correlation and trace propagation.
 25. Bounded low-cardinality service metrics.
 26. Prometheus alert rules and Kafka DLT depth signals.
+27. Opt-in Testcontainers profile and PostgreSQL integration suites.
+28. Redis, Kafka and MongoDB real-infrastructure integration suites.
+29. Reproducible application images and a local mock payment provider.
+30. One-command full-stack Compose startup and bounded health smoke check.
+31. Producer-consumer event contract compatibility tests.
+32. Authenticated happy-path and payment-failure end-to-end tests.
+33. Bounded load, cache-effect and restart/replay resilience validation.
+34. Reachable OpenAPI documentation for external REST APIs.
+35. Architecture, ERD, setup, demo and operational release documentation.
+36. CI pipeline and final release-readiness validation.
 
 ## Current Constraints
 
