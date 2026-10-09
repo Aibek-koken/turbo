@@ -129,6 +129,54 @@ services:
     networks:
       - ecommerce-local
 
+  debezium-connector-bootstrap:
+    build:
+      context: ./infra/debezium-bootstrap
+    image: ecommerce/debezium-connector-bootstrap:local
+    container_name: ecommerce-debezium-connector-bootstrap
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      debezium-connect:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+    environment:
+      DEBEZIUM_BOOTSTRAP_CONNECT_URL: ${DEBEZIUM_BOOTSTRAP_CONNECT_URL:-http://debezium-connect:8083}
+      ORDER_OUTBOX_CONNECTOR_FILE: /workspace/infra/debezium/order-outbox-connector.json
+      PAYMENT_OUTBOX_CONNECTOR_FILE: /workspace/infra/debezium/payment-outbox-connector.json
+      DEBEZIUM_BOOTSTRAP_TIMEOUT_SECONDS: ${DEBEZIUM_BOOTSTRAP_TIMEOUT_SECONDS:-180}
+      DEBEZIUM_CONNECTOR_READY_TIMEOUT_SECONDS: ${DEBEZIUM_CONNECTOR_READY_TIMEOUT_SECONDS:-180}
+      DEBEZIUM_BOOTSTRAP_POLL_SECONDS: ${DEBEZIUM_BOOTSTRAP_POLL_SECONDS:-2}
+      DEBEZIUM_BOOTSTRAP_CURL_TIMEOUT_SECONDS: ${DEBEZIUM_BOOTSTRAP_CURL_TIMEOUT_SECONDS:-30}
+      DEBEZIUM_ORDER_DB_HOST: ${DEBEZIUM_ORDER_DB_HOST:-postgres}
+      DEBEZIUM_ORDER_DB_PORT: ${DEBEZIUM_ORDER_DB_PORT:-5432}
+      DEBEZIUM_ORDER_DB_USER: ${DEBEZIUM_ORDER_DB_USER:-ecommerce}
+      DEBEZIUM_ORDER_DB_PASSWORD: ${DEBEZIUM_ORDER_DB_PASSWORD:-change-me-local-postgres}
+      DEBEZIUM_ORDER_DB_NAME: ${DEBEZIUM_ORDER_DB_NAME:-orders}
+      DEBEZIUM_ORDER_TOPIC_PREFIX: ${DEBEZIUM_ORDER_TOPIC_PREFIX:-ecommerce.order.outbox.v1}
+      DEBEZIUM_ORDER_SLOT_NAME: ${DEBEZIUM_ORDER_SLOT_NAME:-order_outbox_slot_v1}
+      DEBEZIUM_ORDER_PUBLICATION_NAME: ${DEBEZIUM_ORDER_PUBLICATION_NAME:-order_outbox_publication_v1}
+      DEBEZIUM_PAYMENT_DB_HOST: ${DEBEZIUM_PAYMENT_DB_HOST:-postgres}
+      DEBEZIUM_PAYMENT_DB_PORT: ${DEBEZIUM_PAYMENT_DB_PORT:-5432}
+      DEBEZIUM_PAYMENT_DB_USER: ${DEBEZIUM_PAYMENT_DB_USER:-ecommerce}
+      DEBEZIUM_PAYMENT_DB_PASSWORD: ${DEBEZIUM_PAYMENT_DB_PASSWORD:-change-me-local-postgres}
+      DEBEZIUM_PAYMENT_DB_NAME: ${DEBEZIUM_PAYMENT_DB_NAME:-payments}
+      DEBEZIUM_PAYMENT_TOPIC_PREFIX: ${DEBEZIUM_PAYMENT_TOPIC_PREFIX:-ecommerce.payment.outbox.v1}
+      DEBEZIUM_PAYMENT_SLOT_NAME: ${DEBEZIUM_PAYMENT_SLOT_NAME:-payment_outbox_slot_v1}
+      DEBEZIUM_PAYMENT_PUBLICATION_NAME: ${DEBEZIUM_PAYMENT_PUBLICATION_NAME:-payment_outbox_publication_v1}
+    volumes:
+      - ./scripts/bootstrap-debezium-connectors.sh:/workspace/scripts/bootstrap-debezium-connectors.sh:ro
+      - ./infra/debezium:/workspace/infra/debezium:ro
+    command: ["bash", "/workspace/scripts/bootstrap-debezium-connectors.sh"]
+    networks:
+      - ecommerce-local
+
   mongodb:
     image: mongo:7
     container_name: ecommerce-mongodb
@@ -142,7 +190,7 @@ services:
     volumes:
       - mongo-data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "bash -ec 'exec 3<>/dev/tcp/localhost/27017'"]
+      test: ["CMD-SHELL", "mongosh --quiet --username \"$${MONGO_INITDB_ROOT_USERNAME}\" --password \"$${MONGO_INITDB_ROOT_PASSWORD}\" --authenticationDatabase admin --eval \"db.adminCommand({ ping: 1 }).ok\" | grep -q 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -175,11 +223,277 @@ services:
     volumes:
       - ./infra/keycloak:/opt/keycloak/data/import:ro
     healthcheck:
-      test: ["CMD-SHELL", "bash -ec 'exec 3<>/dev/tcp/localhost/9000'"]
+      test: ["CMD-SHELL", "bash -ec 'exec 3<>/dev/tcp/localhost/9000; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; cat <&3 | grep -q \"UP\"'"]
       interval: 10s
       timeout: 5s
       retries: 15
       start_period: 40s
+    networks:
+      - ecommerce-local
+
+  mock-payment-provider:
+    build:
+      context: ./infra/mock-payment-provider
+    image: ecommerce/mock-payment-provider:local
+    container_name: ecommerce-mock-payment-provider
+    restart: unless-stopped
+    environment:
+      MOCK_PAYMENT_PROVIDER_PORT: 8089
+      MOCK_PAYMENT_PROVIDER_AUTHORIZE_PATH: ${MOCK_PAYMENT_PROVIDER_AUTHORIZE_PATH:-/api/mock-payments/authorize}
+      MOCK_PAYMENT_PROVIDER_DECLINED_AMOUNT: ${MOCK_PAYMENT_PROVIDER_DECLINED_AMOUNT:-400.00}
+      MOCK_PAYMENT_PROVIDER_TIMEOUT_AMOUNT: ${MOCK_PAYMENT_PROVIDER_TIMEOUT_AMOUNT:-408.00}
+      MOCK_PAYMENT_PROVIDER_5XX_AMOUNT: ${MOCK_PAYMENT_PROVIDER_5XX_AMOUNT:-500.00}
+      MOCK_PAYMENT_PROVIDER_TIMEOUT_SECONDS: ${MOCK_PAYMENT_PROVIDER_TIMEOUT_SECONDS:-5}
+    ports:
+      - "${MOCK_PAYMENT_PROVIDER_HOST_PORT:-8089}:8089"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8089/actuator/health', timeout=2).read()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - ecommerce-local
+
+  catalog-service:
+    build:
+      context: .
+      dockerfile: services/catalog-service/Dockerfile
+    image: ecommerce/catalog-service:local
+    container_name: ecommerce-catalog-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    environment:
+      CATALOG_DB_URL: ${CATALOG_SERVICE_CONTAINER_DB_URL:-jdbc:postgresql://postgres:5432/catalog}
+      CATALOG_DB_USERNAME: ${CATALOG_DB_USERNAME:-ecommerce}
+      CATALOG_DB_PASSWORD: ${CATALOG_DB_PASSWORD:-change-me-local-postgres}
+      REDIS_HOST: ${REDIS_CONTAINER_HOST:-redis}
+      REDIS_PORT: ${REDIS_CONTAINER_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change-me-local-redis}
+      REDIS_DATABASE: ${REDIS_DATABASE:-0}
+      REDIS_TIMEOUT: ${REDIS_TIMEOUT:-PT2S}
+      REDIS_CONNECT_TIMEOUT: ${REDIS_CONNECT_TIMEOUT:-PT2S}
+      CATALOG_CACHE_ENABLED: ${CATALOG_CACHE_ENABLED:-true}
+      CATALOG_PRODUCT_DETAIL_CACHE_TTL: ${CATALOG_PRODUCT_DETAIL_CACHE_TTL:-PT10M}
+      CATALOG_PRODUCT_DETAIL_CACHE_LOCK_WAIT: ${CATALOG_PRODUCT_DETAIL_CACHE_LOCK_WAIT:-PT0.25S}
+      CATALOG_PRODUCT_DETAIL_CACHE_LOCK_LEASE: ${CATALOG_PRODUCT_DETAIL_CACHE_LOCK_LEASE:-PT5S}
+      CATALOG_PRODUCT_DETAIL_CACHE_KEY_PREFIX: ${CATALOG_PRODUCT_DETAIL_CACHE_KEY_PREFIX:-catalog:product-detail}
+      CATALOG_SUPPLIER_IMPORT_CHUNK_SIZE: ${CATALOG_SUPPLIER_IMPORT_CHUNK_SIZE:-50}
+      CATALOG_SUPPLIER_IMPORT_DIRECTORY: ${CATALOG_SUPPLIER_IMPORT_DIRECTORY:-var/catalog/imports}
+      ECOMMERCE_SECURITY_ISSUER_URI: ${ECOMMERCE_SECURITY_ISSUER_URI:-http://localhost:8085/realms/ecommerce}
+      ECOMMERCE_SECURITY_JWK_SET_URI: ${ECOMMERCE_CONTAINER_SECURITY_JWK_SET_URI:-http://keycloak:8080/realms/ecommerce/protocol/openid-connect/certs}
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:-1.0}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_CONTAINER_EXPORTER_OTLP_TRACES_ENDPOINT:-http://jaeger:4318/v1/traces}
+    ports:
+      - "${CATALOG_SERVICE_HOST_PORT:-8081}:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health/readiness >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - ecommerce-local
+
+  order-service:
+    build:
+      context: .
+      dockerfile: services/order-service/Dockerfile
+    image: ecommerce/order-service:local
+    container_name: ecommerce-order-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      catalog-service:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    environment:
+      ORDER_SERVICE_DATASOURCE_URL: ${ORDER_SERVICE_CONTAINER_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/orders}
+      ORDER_SERVICE_DATASOURCE_USERNAME: ${ORDER_SERVICE_DATASOURCE_USERNAME:-ecommerce}
+      ORDER_SERVICE_DATASOURCE_PASSWORD: ${ORDER_SERVICE_DATASOURCE_PASSWORD:-change-me-local-postgres}
+      ORDER_SERVICE_CATALOG_BASE_URL: ${ORDER_SERVICE_CONTAINER_CATALOG_BASE_URL:-http://catalog-service:8081}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_CONTAINER_BOOTSTRAP_SERVERS:-kafka:9092}
+      ORDER_SERVICE_PAYMENT_RESULT_TOPIC: ${ORDER_SERVICE_PAYMENT_RESULT_TOPIC:-ecommerce.payment.events}
+      ORDER_SERVICE_PAYMENT_RESULT_GROUP_ID: ${ORDER_SERVICE_PAYMENT_RESULT_GROUP_ID:-order-service.payment-results.v1}
+      ORDER_SERVICE_PAYMENT_RESULT_CONSUMER_ENABLED: ${ORDER_SERVICE_PAYMENT_RESULT_CONSUMER_ENABLED:-true}
+      ORDER_SERVICE_PAYMENT_RESULT_RETRY_MAX_ATTEMPTS: ${ORDER_SERVICE_PAYMENT_RESULT_RETRY_MAX_ATTEMPTS:-3}
+      ORDER_SERVICE_PAYMENT_RESULT_RETRY_BACKOFF: ${ORDER_SERVICE_PAYMENT_RESULT_RETRY_BACKOFF:-PT1S}
+      ORDER_SERVICE_PAYMENT_RESULT_DLT_TOPIC: ${ORDER_SERVICE_PAYMENT_RESULT_DLT_TOPIC:-ecommerce.payment.events.DLT}
+      ECOMMERCE_SECURITY_ISSUER_URI: ${ECOMMERCE_SECURITY_ISSUER_URI:-http://localhost:8085/realms/ecommerce}
+      ECOMMERCE_SECURITY_JWK_SET_URI: ${ECOMMERCE_CONTAINER_SECURITY_JWK_SET_URI:-http://keycloak:8080/realms/ecommerce/protocol/openid-connect/certs}
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:-1.0}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_CONTAINER_EXPORTER_OTLP_TRACES_ENDPOINT:-http://jaeger:4318/v1/traces}
+    ports:
+      - "${ORDER_SERVICE_HOST_PORT:-8082}:8082"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8082/actuator/health/readiness >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - ecommerce-local
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: services/payment-service/Dockerfile
+    image: ecommerce/payment-service:local
+    container_name: ecommerce-payment-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      mock-payment-provider:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    environment:
+      PAYMENT_SERVICE_DATASOURCE_URL: ${PAYMENT_SERVICE_CONTAINER_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/payments}
+      PAYMENT_SERVICE_DATASOURCE_USERNAME: ${PAYMENT_SERVICE_DATASOURCE_USERNAME:-ecommerce}
+      PAYMENT_SERVICE_DATASOURCE_PASSWORD: ${PAYMENT_SERVICE_DATASOURCE_PASSWORD:-change-me-local-postgres}
+      PAYMENT_SERVICE_MOCK_PROVIDER_BASE_URL: ${PAYMENT_SERVICE_CONTAINER_MOCK_PROVIDER_BASE_URL:-http://mock-payment-provider:8089}
+      PAYMENT_SERVICE_MOCK_PROVIDER_AUTHORIZE_PATH: ${PAYMENT_SERVICE_MOCK_PROVIDER_AUTHORIZE_PATH:-/api/mock-payments/authorize}
+      PAYMENT_SERVICE_MOCK_PROVIDER_CONNECT_TIMEOUT: ${PAYMENT_SERVICE_MOCK_PROVIDER_CONNECT_TIMEOUT:-PT2S}
+      PAYMENT_SERVICE_MOCK_PROVIDER_READ_TIMEOUT: ${PAYMENT_SERVICE_MOCK_PROVIDER_READ_TIMEOUT:-PT3S}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_CONTAINER_BOOTSTRAP_SERVERS:-kafka:9092}
+      PAYMENT_SERVICE_ORDER_CREATED_TOPIC: ${PAYMENT_SERVICE_ORDER_CREATED_TOPIC:-ecommerce.order.events}
+      PAYMENT_SERVICE_ORDER_CREATED_GROUP_ID: ${PAYMENT_SERVICE_ORDER_CREATED_GROUP_ID:-payment-service.order-created.v1}
+      PAYMENT_SERVICE_ORDER_CREATED_CONSUMER_ENABLED: ${PAYMENT_SERVICE_ORDER_CREATED_CONSUMER_ENABLED:-true}
+      PAYMENT_SERVICE_ORDER_CREATED_RETRY_MAX_ATTEMPTS: ${PAYMENT_SERVICE_ORDER_CREATED_RETRY_MAX_ATTEMPTS:-3}
+      PAYMENT_SERVICE_ORDER_CREATED_RETRY_BACKOFF: ${PAYMENT_SERVICE_ORDER_CREATED_RETRY_BACKOFF:-PT1S}
+      PAYMENT_SERVICE_ORDER_CREATED_DLT_TOPIC: ${PAYMENT_SERVICE_ORDER_CREATED_DLT_TOPIC:-ecommerce.order.events.DLT}
+      ECOMMERCE_SECURITY_ISSUER_URI: ${ECOMMERCE_SECURITY_ISSUER_URI:-http://localhost:8085/realms/ecommerce}
+      ECOMMERCE_SECURITY_JWK_SET_URI: ${ECOMMERCE_CONTAINER_SECURITY_JWK_SET_URI:-http://keycloak:8080/realms/ecommerce/protocol/openid-connect/certs}
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:-1.0}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_CONTAINER_EXPORTER_OTLP_TRACES_ENDPOINT:-http://jaeger:4318/v1/traces}
+    ports:
+      - "${PAYMENT_SERVICE_HOST_PORT:-8083}:8083"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8083/actuator/health/readiness >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - ecommerce-local
+
+  audit-notification-service:
+    build:
+      context: .
+      dockerfile: services/audit-notification-service/Dockerfile
+    image: ecommerce/audit-notification-service:local
+    container_name: ecommerce-audit-notification-service
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    environment:
+      AUDIT_NOTIFICATION_MONGODB_HOST: ${AUDIT_NOTIFICATION_CONTAINER_MONGODB_HOST:-mongodb}
+      AUDIT_NOTIFICATION_MONGODB_PORT: ${AUDIT_NOTIFICATION_CONTAINER_MONGODB_PORT:-27017}
+      AUDIT_NOTIFICATION_MONGODB_DATABASE: ${AUDIT_NOTIFICATION_MONGODB_DATABASE:-audit}
+      AUDIT_NOTIFICATION_MONGODB_USERNAME: ${AUDIT_NOTIFICATION_MONGODB_USERNAME:-ecommerce}
+      AUDIT_NOTIFICATION_MONGODB_PASSWORD: ${AUDIT_NOTIFICATION_MONGODB_PASSWORD:-change-me-local-mongo}
+      AUDIT_NOTIFICATION_MONGODB_AUTHENTICATION_DATABASE: ${AUDIT_NOTIFICATION_MONGODB_AUTHENTICATION_DATABASE:-admin}
+      AUDIT_NOTIFICATION_MONGODB_AUTO_INDEX_CREATION: ${AUDIT_NOTIFICATION_MONGODB_AUTO_INDEX_CREATION:-true}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_CONTAINER_BOOTSTRAP_SERVERS:-kafka:9092}
+      AUDIT_NOTIFICATION_ORDER_CREATED_TOPIC: ${AUDIT_NOTIFICATION_ORDER_CREATED_TOPIC:-ecommerce.order.events}
+      AUDIT_NOTIFICATION_ORDER_CREATED_GROUP_ID: ${AUDIT_NOTIFICATION_ORDER_CREATED_GROUP_ID:-audit-notification-service.order-created.v1}
+      AUDIT_NOTIFICATION_ORDER_CREATED_CONSUMER_ENABLED: ${AUDIT_NOTIFICATION_ORDER_CREATED_CONSUMER_ENABLED:-true}
+      AUDIT_NOTIFICATION_ORDER_CREATED_RETRY_MAX_ATTEMPTS: ${AUDIT_NOTIFICATION_ORDER_CREATED_RETRY_MAX_ATTEMPTS:-3}
+      AUDIT_NOTIFICATION_ORDER_CREATED_RETRY_BACKOFF: ${AUDIT_NOTIFICATION_ORDER_CREATED_RETRY_BACKOFF:-PT1S}
+      AUDIT_NOTIFICATION_ORDER_CREATED_DLT_TOPIC: ${AUDIT_NOTIFICATION_ORDER_CREATED_DLT_TOPIC:-ecommerce.order.events.audit.DLT}
+      AUDIT_NOTIFICATION_PAYMENT_RESULTS_TOPIC: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_TOPIC:-ecommerce.payment.events}
+      AUDIT_NOTIFICATION_PAYMENT_RESULTS_GROUP_ID: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_GROUP_ID:-audit-notification-service.payment-results.v1}
+      AUDIT_NOTIFICATION_PAYMENT_RESULTS_CONSUMER_ENABLED: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_CONSUMER_ENABLED:-true}
+      AUDIT_NOTIFICATION_PAYMENT_RESULTS_RETRY_MAX_ATTEMPTS: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_RETRY_MAX_ATTEMPTS:-3}
+      AUDIT_NOTIFICATION_PAYMENT_RESULTS_RETRY_BACKOFF: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_RETRY_BACKOFF:-PT1S}
+      AUDIT_NOTIFICATION_PAYMENT_RESULTS_DLT_TOPIC: ${AUDIT_NOTIFICATION_PAYMENT_RESULTS_DLT_TOPIC:-ecommerce.payment.events.audit.DLT}
+      AUDIT_NOTIFICATION_EMAIL_ENABLED: ${AUDIT_NOTIFICATION_EMAIL_ENABLED:-true}
+      AUDIT_NOTIFICATION_EMAIL_MAX_ATTEMPTS: ${AUDIT_NOTIFICATION_EMAIL_MAX_ATTEMPTS:-3}
+      AUDIT_NOTIFICATION_EMAIL_BATCH_SIZE: ${AUDIT_NOTIFICATION_EMAIL_BATCH_SIZE:-50}
+      AUDIT_NOTIFICATION_PUSH_ENABLED: ${AUDIT_NOTIFICATION_PUSH_ENABLED:-true}
+      AUDIT_NOTIFICATION_PUSH_MAX_ATTEMPTS: ${AUDIT_NOTIFICATION_PUSH_MAX_ATTEMPTS:-3}
+      AUDIT_NOTIFICATION_PUSH_BATCH_SIZE: ${AUDIT_NOTIFICATION_PUSH_BATCH_SIZE:-50}
+      AUDIT_NOTIFICATION_DLT_DEPTH_ENABLED: ${AUDIT_NOTIFICATION_DLT_DEPTH_ENABLED:-true}
+      AUDIT_NOTIFICATION_DLT_DEPTH_REFRESH_INTERVAL: ${AUDIT_NOTIFICATION_DLT_DEPTH_REFRESH_INTERVAL:-PT30S}
+      AUDIT_NOTIFICATION_DLT_DEPTH_TIMEOUT: ${AUDIT_NOTIFICATION_DLT_DEPTH_TIMEOUT:-PT2S}
+      ECOMMERCE_SECURITY_ISSUER_URI: ${ECOMMERCE_SECURITY_ISSUER_URI:-http://localhost:8085/realms/ecommerce}
+      ECOMMERCE_SECURITY_JWK_SET_URI: ${ECOMMERCE_CONTAINER_SECURITY_JWK_SET_URI:-http://keycloak:8080/realms/ecommerce/protocol/openid-connect/certs}
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:-1.0}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_CONTAINER_EXPORTER_OTLP_TRACES_ENDPOINT:-http://jaeger:4318/v1/traces}
+    ports:
+      - "${AUDIT_NOTIFICATION_SERVICE_HOST_PORT:-8084}:8084"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8084/actuator/health/readiness >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - ecommerce-local
+
+  gateway-service:
+    build:
+      context: .
+      dockerfile: services/gateway-service/Dockerfile
+    image: ecommerce/gateway-service:local
+    container_name: ecommerce-gateway-service
+    restart: unless-stopped
+    depends_on:
+      catalog-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      audit-notification-service:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    environment:
+      ECOMMERCE_CATALOG_SERVICE_URI: ${ECOMMERCE_CONTAINER_CATALOG_SERVICE_URI:-http://catalog-service:8081}
+      ECOMMERCE_ORDER_SERVICE_URI: ${ECOMMERCE_CONTAINER_ORDER_SERVICE_URI:-http://order-service:8082}
+      ECOMMERCE_PAYMENT_SERVICE_URI: ${ECOMMERCE_CONTAINER_PAYMENT_SERVICE_URI:-http://payment-service:8083}
+      ECOMMERCE_AUDIT_NOTIFICATION_SERVICE_URI: ${ECOMMERCE_CONTAINER_AUDIT_NOTIFICATION_SERVICE_URI:-http://audit-notification-service:8084}
+      ECOMMERCE_SECURITY_ISSUER_URI: ${ECOMMERCE_SECURITY_ISSUER_URI:-http://localhost:8085/realms/ecommerce}
+      ECOMMERCE_SECURITY_JWK_SET_URI: ${ECOMMERCE_CONTAINER_SECURITY_JWK_SET_URI:-http://keycloak:8080/realms/ecommerce/protocol/openid-connect/certs}
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:-1.0}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_CONTAINER_EXPORTER_OTLP_TRACES_ENDPOINT:-http://jaeger:4318/v1/traces}
+    ports:
+      - "${GATEWAY_SERVICE_HOST_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
     networks:
       - ecommerce-local
 
@@ -199,6 +513,12 @@ services:
       - prometheus-data:/prometheus
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     networks:
       - ecommerce-local
 

@@ -34,6 +34,12 @@ class OrderSecurityConfigurationTest {
     }
 
     @Test
+    void openApiJsonIsPublic() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void customerProbeRejectsMissingBearerToken() throws Exception {
         mockMvc.perform(get("/api/orders/customer/rbac"))
                 .andExpect(status().isUnauthorized());

@@ -1,6 +1,7 @@
 package com.kora.ecommerce.payment.provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
@@ -41,6 +42,12 @@ class RestClientMockPaymentProviderClientTest {
         bindServerClient();
         server.expect(requestTo(BASE_URL + AUTHORIZE_PATH))
                 .andExpect(method(HttpMethod.POST))
+                .andExpect(jsonPath("$.providerRequestId").isString())
+                .andExpect(jsonPath("$.paymentId").isString())
+                .andExpect(jsonPath("$.orderId").isString())
+                .andExpect(jsonPath("$.customerId").value("jwt-customer-123"))
+                .andExpect(jsonPath("$.amount").value(42.99))
+                .andExpect(jsonPath("$.currency").value("USD"))
                 .andRespond(withSuccess("""
                         {
                           "outcome": "APPROVED",

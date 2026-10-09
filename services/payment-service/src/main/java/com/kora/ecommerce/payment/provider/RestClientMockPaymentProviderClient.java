@@ -40,12 +40,15 @@ class RestClientMockPaymentProviderClient implements PaymentProviderClient {
     public PaymentProviderResult authorize(PaymentProviderRequest request) {
         Objects.requireNonNull(request, "request is required");
         try {
+            String requestBody = objectMapper.writeValueAsString(ProviderAuthorizeRequest.from(request));
             return restClient.post()
                     .uri(authorizePath)
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
-                    .body(ProviderAuthorizeRequest.from(request))
+                    .body(requestBody)
                     .exchange((clientRequest, response) -> mapResponse(response));
+        } catch (JsonProcessingException exception) {
+            return PaymentProviderResult.malformedResponse();
         } catch (MalformedProviderResponseException exception) {
             return PaymentProviderResult.malformedResponse();
         } catch (ResourceAccessException exception) {

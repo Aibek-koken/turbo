@@ -13,16 +13,21 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.TestPropertySource;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@EntityScan(basePackages = "com.kora.ecommerce.catalog.domain")
+@EnableJpaRepositories(basePackages = "com.kora.ecommerce.catalog.repository")
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:catalog_repository;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
+        "spring.flyway.locations=classpath:db/migration",
         "spring.jpa.hibernate.ddl-auto=validate"
 })
 class CatalogRepositoryTest {

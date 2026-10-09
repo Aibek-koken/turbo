@@ -33,6 +33,12 @@ public class CatalogSecurityConfiguration {
                                 "/actuator/info",
                                 "/actuator/prometheus")
                         .permitAll()
+                        .requestMatchers(
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**")
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/catalog/rbac/customer")
                         .hasAnyRole(CUSTOMER, CATALOG_ADMIN, OPS_ADMIN)
                         .requestMatchers(HttpMethod.GET, "/api/catalog/rbac/admin")

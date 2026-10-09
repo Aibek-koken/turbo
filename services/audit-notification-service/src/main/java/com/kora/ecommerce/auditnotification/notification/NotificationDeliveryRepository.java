@@ -16,6 +16,8 @@ public interface NotificationDeliveryRepository extends MongoRepository<Notifica
 
     List<NotificationDeliveryDocument> findByOrderId(String orderId);
 
+    List<NotificationDeliveryDocument> findByOrderIdAndCustomerId(String orderId, String customerId);
+
     List<NotificationDeliveryDocument> findByCustomerId(String customerId);
 
     List<NotificationDeliveryDocument> findByStatus(NotificationDeliveryStatus status);

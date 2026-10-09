@@ -1,20 +1,338 @@
 # Project State
 
-Last updated: 2026-10-06
+Last updated: 2026-10-09
 
 ## Current Status
 
-Sprint 6 night-runner workflow is prepared but no Sprint 6 implementation has
-started. The queue now contains pending tasks ECOM-040 through ECOM-052 for an
-opt-in Testcontainers integration profile, real PostgreSQL/Redis/Kafka/MongoDB
-coverage, application container images and a local mock payment provider,
-one-command full-stack startup, event contract and authenticated E2E tests,
-bounded load/restart resilience validation, OpenAPI, architecture/ERD/demo
-documentation and a Java 21 CI/release-readiness pipeline.
-`docs/night-runner/sprint6-context-pack.md` is the compact source of truth for
-those night sessions. Runner, prompt builder, safe-approval, status and
-validation scripts recognize the new phase. Sprint 6 implementation remains
-untouched. Next task: ECOM-040.
+ECOM-052 is complete. The CI workflow is in place at
+`.github/workflows/ci.yml` with Java 21,
+read-only repository permissions, concurrency cancellation, pinned major
+actions, Maven dependency caching, unit/OpenAPI tests, contract tests,
+Docker-gated integration tests, local Compose image builds, full-stack smoke
+coverage and failure diagnostics upload. `scripts/project-validate.sh` now has
+stronger `ci-config` checks, a `compose-image-build` mode and a bounded
+`release-check` path for API docs, contracts, integration tests and Compose
+image builds. README documents the CI and release-readiness commands, with
+load and resilience evidence intentionally left as manual long-running checks.
+
+The final release gate now stops only this project's running Compose services
+before Testcontainers integration tests, preserving containers, volumes and
+application data while freeing enough Docker Desktop memory for PostgreSQL,
+Kafka and MongoDB suites. Compose image validation defaults to the regular
+Compose builder because Buildx Bake cannot transport the non-ASCII checkout
+path in a macOS session header. Validation passed:
+`bash -n scripts/project-validate.sh`,
+`scripts/project-validate.sh ci-config`,
+`scripts/project-validate.sh integration-test`,
+`scripts/project-validate.sh compose-image-build`, and the complete
+`scripts/project-validate.sh release-check`. Sprint 6 and the six-sprint
+delivery queue are complete; no further task is queued.
+
+ECOM-051 is complete. The root README now describes the current implemented
+service responsibilities instead of future skeletons, lists prerequisites,
+one-command startup, validation commands, direct OpenAPI/Swagger UI URLs, and
+a concise authenticated demo entry point. New Git-reviewable documentation was
+added for architecture, data model and demo operations:
+`docs/architecture.md`, `docs/data-model.md` and `docs/demo-runbook.md`.
+The architecture doc covers service/data ownership, synchronous calls,
+Order and Payment outbox/CDC paths, Kafka consumers, observability and
+security boundaries. The data-model doc records the Catalog, Order and Payment
+PostgreSQL schemas plus MongoDB `audit_events` and
+`notification_deliveries`. The demo runbook covers the authenticated happy
+path, deterministic `400.00` payment failure path and expected Payment,
+provider, audit, notification, connector, metric and trace evidence.
+
+Operational documentation was consolidated through README and architecture
+links for health, metrics, traces, connector status, DLT inspection,
+integration, contract, E2E, load and resilience checks. `infra/README.md`,
+`docs/developer-setup.md`, `docs/service-rbac.md` and
+`docs/observability-runbook.md` were refreshed to remove stale setup or route
+language and point at the current Compose/bootstrap/API behavior. `DESIGN.md`
+now links to the detailed architecture, data-model and demo docs. Validation
+passed: `scripts/project-validate.sh docs-check`. A scoped whitespace check
+also passed for the edited documentation files:
+`git diff --check -- README.md DESIGN.md infra/README.md docs/architecture.md docs/data-model.md docs/demo-runbook.md docs/observability-runbook.md docs/service-rbac.md docs/developer-setup.md docs/night-runner/task-queue.md STATE.md docs/night-runner/handoff.md`.
+The runner initially marked the completed task blocked because a documentation
+skill shown in the Codex log contained illustrative `git push` and AWS
+placeholder text. `scripts/night-agent-safe-approve.sh` now distinguishes
+executed Codex command records from read-only prompt, skill and prior dirty-diff
+content, while still rejecting executed dangerous commands and secret-like log
+values.
+Next task at that point was ECOM-052; it is now complete.
+
+ECOM-050 is complete. Catalog, Order, Payment and Audit Notification now publish
+Springdoc OpenAPI JSON and Swagger UI for their externally useful HTTP APIs
+while keeping actuator, RBAC probe and internal implementation details out of
+the public API description. The root Maven parent pins compatible Springdoc
+2.5.0, each service exposes `/v3/api-docs` and `/swagger-ui.html` directly on
+its local service port, and service security explicitly permits only the docs
+endpoints while preserving existing JWT/RBAC authorization for production API
+routes.
+
+The public API docs now describe bearer JWT security, role expectations,
+request and response schemas, pageable endpoints, and Problem Details responses
+for the Catalog browse/admin APIs, customer and operations Order APIs, new
+safe read-only Payment lookup APIs, and new safe read-only Audit/Notification
+query APIs. Payment exposes customer-scoped lookup by order and operations
+lookup by payment/order without exposing provider/internal outbox details.
+Audit Notification exposes customer-scoped notification delivery history and
+operations audit-event lookup/page queries without exposing Kafka offsets or
+other internal-only fields. `docs/api-documentation.md` documents the direct
+local OpenAPI and Swagger UI URLs plus JWT role expectations, and README links
+to it.
+
+Focused tests cover OpenAPI document availability, key documented paths,
+hidden internal probes, public docs security, unchanged endpoint authorization,
+Payment query scoping, Audit/Notification query scoping and pagination
+validation. Validation passed on Java 21:
+`scripts/project-validate.sh api-docs-test`. During validation, earlier local
+attempts exposed three integration issues that were fixed before the passing
+run: Gateway tests no longer bind random sockets, Springdoc was pinned to a
+Spring Boot 3.3-compatible version, and the new Payment query test now cleans
+up after each test so the shared H2 test database does not leak state into
+existing Payment application tests. Next task: ECOM-051.
+
+ECOM-049 is complete. The repository now has bounded local restart/replay
+resilience validation for US-28. `scripts/run-resilience-validation.sh` starts
+or reuses the full Compose stack with the resource-bounded
+`tests/resilience/docker-compose.resilience.yml` override, creates isolated
+local Keycloak users, injects targeted fault windows, prints per-scenario
+recovery timelines, verifies final consistency through Gateway/PostgreSQL/
+MongoDB/mock-provider/Kafka checks, and restores any touched Payment, Audit or
+Kafka service without deleting volumes or resetting databases. The smoke
+profile runs a Payment service restart window and a Kafka interruption window;
+the local/all profiles can also run the Audit Notification restart scenario,
+and longer fault windows require explicit opt-in. The runner also publishes
+malformed local-only records to exercise the configured Payment, Order and
+Audit Notification DLTs, then replays captured `OrderCreated` and
+`PaymentSucceeded` payloads to prove provider attempts, terminal payment
+outbox rows, audit documents and completed notification deliveries remain
+exactly once.
+
+Documentation now covers the resilience smoke command, optional scenarios,
+fault-window caps, recovery expectations, retained local evidence and failure
+diagnostics in `docs/resilience-validation.md`, with links from
+`docs/integration-tests.md` and `README.md`. Validation passed:
+`bash -n scripts/run-resilience-validation.sh`, merged Compose configuration
+for `docker-compose.yml` plus the resilience override, `git diff --check`, and
+the required `scripts/project-validate.sh resilience-smoke` with Docker access.
+The passing run was
+`resilience-20261008163848-609699cce410`: Payment restart recovered to `PAID`
+with one provider attempt and one terminal outbox row, reached exactly-once
+audit/EMAIL/PUSH state, and stayed idempotent after duplicate replay; Kafka
+interruption recovered after Kafka, clients and Debezium connectors came back,
+then reached the same final consistency and duplicate replay checks. The DLT
+probe advanced all four configured DLT offsets from 1 to 2. Earlier validation
+attempts were useful harness feedback: the sandboxed run was blocked by Docker
+socket permissions, the first approved run exposed that stopped Compose
+containers require `docker compose ps -a -q`, and the second exposed that the
+Apache Kafka image provides `kafka-get-offsets.sh` rather than the older
+`GetOffsetShell` class. Both script issues were fixed before the passing run.
+Next task: ECOM-050.
+
+ECOM-048 is complete. The repository now has a bounded, versioned Catalog
+Gateway load validation harness for US-28. `scripts/run-load-validation.sh`
+drives a smoke-safe Catalog browse/detail scenario through Gateway with
+configurable base URL, virtual users, duration and thresholds, and uses the
+load-specific Compose override in `tests/load/docker-compose.load.yml` to keep
+the Catalog/Gateway slice within local Docker Desktop resources. The smoke
+profile is capped at 2 virtual users for 8 seconds by default, records
+throughput, error rate and latency percentiles, and requires explicit opt-in
+for the higher profile while still enforcing hard caps.
+
+The load runner creates one local Catalog fixture through Gateway, proves cold
+versus warm product-detail cache behavior with existing
+`ecommerce_cache_requests_total` hit/miss counters, and records a best-effort
+PostgreSQL `pg_stat_database` tuple-read observation for the Catalog database.
+The passing run showed cold cache misses, warm cache hits, zero warm misses and
+zero warm database tuple-read delta. A small Java 21 virtual-thread runtime
+probe under `tests/load/VirtualThreadRuntimeProbe.java` validates bounded
+virtual-thread execution without making production capacity claims.
+`docs/load-validation.md`, `docs/integration-tests.md` and `README.md` document
+the smoke command, thresholds, opt-in higher profile and result interpretation.
+
+Validation passed: `bash -n scripts/run-load-validation.sh`, Python compile
+syntax check for `tests/load/catalog_browse_detail_load.py`, Java 21 compile
+and runtime probe check for `tests/load/VirtualThreadRuntimeProbe.java`,
+`git diff --check`, and the required
+`scripts/project-validate.sh load-smoke` with Docker access. During validation,
+the initial sandboxed run was blocked by Docker socket permissions, the first
+Compose startup path unnecessarily depended on the unrelated mock provider, and
+the first load threshold was too tight for a just-started local stack. The
+runner now starts only the Catalog/Gateway slice when needed and uses a
+developer-machine smoke p95 threshold that the final run passed with zero
+errors. A post-task safety check then rejected an `rm -rf` temporary-directory
+cleanup; it was replaced with deletion limited to generated `.class` files and
+`rmdir`. The recovery smoke run passed with 548/548 requests, zero errors,
+59.2 ms p95 latency, 68.23 requests/second and 16/16 virtual-thread probe
+tasks. Next task: ECOM-049.
+
+ECOM-047 is complete. The authenticated
+purchase-flow E2E harness now runs through Gateway with local Keycloak-issued
+tokens, creates deterministic Catalog fixtures through authorized APIs, places
+approved and declined customer orders, polls with deadlines through
+CDC/Kafka-driven terminal states, checks Payment PostgreSQL rows, Audit MongoDB
+records, mock email/push delivery evidence and duplicate replay safety, and
+prints bounded diagnostics on failure. The runner now performs its own Compose
+readiness checks, restarts services left in `Created` after transient Compose
+dependency failures, reconciles the two Debezium outbox connectors for E2E
+execution with `snapshot.mode=no_data`, avoids the incompatible Debezium
+outbox timestamp-field mapping at runtime, ensures the local Keycloak test
+client exposes realm roles and gateway audience claims, and uses a focused E2E
+Compose override to keep Kafka, Debezium, Keycloak, MongoDB and five Spring JVMs
+stable within a small Docker Desktop memory budget. Payment now serializes its
+provider request explicitly with the configured `ObjectMapper`, preventing the
+runtime client from sending `{}`; the local provider ledger records safe field
+shape diagnostics and accepts camelCase and snake_case request keys.
+
+Validation passed: `bash -n scripts/run-e2e-tests.sh`, the two Python mock
+provider regression tests, the focused
+`RestClientMockPaymentProviderClientTest` suite on Java 21, merged Compose
+configuration validation, and
+`E2E_STACK_BUILD_MODE=never scripts/project-validate.sh e2e-test` with Docker.
+The full E2E run proved approved `PAID` and declined `PAYMENT_FAILED` flows,
+one provider attempt per order, one audit plus EMAIL/PUSH delivery per event,
+and duplicate replay without additional charges or notifications. Docker
+registry metadata was unavailable during the recovery session, so current
+local images were refreshed from the tested source artifacts instead of
+pulling base layers; no volumes or application data were deleted. Next task:
+ECOM-048.
+
+ECOM-046 is complete. The repository now has an opt-in `contract-tests` Maven
+profile, selected by `scripts/project-validate.sh contract-test`, that adds the
+new `tests/event-contracts` module and runs focused `*ContractTest` classes
+without Docker, Testcontainers or the full Compose stack. Order, Payment and
+Audit Notification attach profile-only `plain` classifier jars so the contract
+module can compile against service-owned classes while normal executable
+Spring Boot packaging remains unchanged. The new `EventEnvelopeContractTest`
+generates representative `OrderCreated`, `PaymentSucceeded` and
+`PaymentFailed` JSON through the actual Order and Payment outbox factories and
+feeds that output into the real Payment, Order and Audit Notification consumer
+parsers. Coverage verifies version-1 envelope fields, aggregate/order
+consistency, money/currency representation, trace/correlation metadata,
+required field rejection and unsupported version rejection without adding a
+shared business-domain module or loosening consumer validation. README and
+`docs/integration-tests.md` now document the local contract-test command.
+Validation passed: `scripts/project-validate.sh contract-test` on Java 21.
+During validation, an initial compile exposed the executable Boot jar
+classpath issue for cross-service tests, and the first test run showed that
+Order emits JSON money as numeric values with fewer trailing zeros while
+consumers normalize to four decimals; both were fixed in the test/profile
+wiring. Next task: ECOM-047.
+
+ECOM-045 is complete. Docker Compose now includes a default
+`debezium-connector-bootstrap` service backed by a small local Alpine image and
+the bounded `scripts/bootstrap-debezium-connectors.sh` helper. The bootstrap
+waits for PostgreSQL, Kafka, Connect, Order and Payment readiness, renders the
+connector environment placeholders to concrete local values, and idempotently
+PUTs both `ecommerce-order-outbox-v1` and `ecommerce-payment-outbox-v1` before
+waiting for their tasks to reach `RUNNING`. Compose health checks now use real
+readiness probes for MongoDB, Keycloak and the Spring services, plus Prometheus
+readiness, while Jaeger remains verified by the smoke script because its image
+does not expose a portable shell health check. The new
+`scripts/verify-full-stack.sh` starts the stack in detached mode, builds local
+images only when they are missing unless `--rebuild` is requested, waits with a
+bounded deadline, verifies Keycloak, the mock provider, Gateway, all services,
+both Debezium connectors, Prometheus and Jaeger, and never removes volumes or
+application data. Local setup docs and `.env.example` now document the exact
+one-command and smoke workflow. Validation passed:
+`scripts/project-validate.sh full-stack-config` and
+`scripts/project-validate.sh full-stack-smoke` with Docker access. During
+validation, an initial sandboxed smoke attempt was blocked by Docker socket
+permissions, and the first full smoke exposed unresolved connector placeholders
+and a too-short Debezium REST timeout; both were fixed before the passing run.
+Next task: ECOM-046.
+
+ECOM-044 is complete. The repository now has reproducible local container
+builds for Gateway, Catalog, Order, Payment and Audit Notification through
+service-local multi-stage Dockerfiles that build with Maven on Java 21 and run
+the packaged Spring Boot jars on Java 21 JRE images as a non-root user. A root
+`.dockerignore` now keeps local build output, VCS metadata, local env files,
+agent logs, source package documents and other non-image inputs out of Docker
+build contexts. Docker Compose now defines all five application services plus a
+deterministic `mock-payment-provider` service with internal DNS wiring,
+environment placeholders, health checks, explicit readiness dependencies and
+configurable host ports. The mock provider supports approved, declined,
+timeout and 5xx local scenarios without any real payment integration. Local
+environment placeholders and setup docs now describe the container-internal DNS
+values, host port overrides and mock-provider scenario amounts. Validation
+passed: `scripts/project-validate.sh full-stack-config` and `git diff --check`.
+Next task: ECOM-045.
+
+ECOM-043 is complete. Audit Notification Service now has a dedicated MongoDB
+Testcontainers suite for its Mongo-owned audit and notification persistence
+boundaries. The new `AuditNotificationMongoIT` starts an isolated MongoDB 7
+database through a dynamic replica-set URL and verifies real index creation for
+`audit_events` and `notification_deliveries`, including the unique audit event
+ID replay index and the unique delivery event/channel ledger index. The suite
+persists OrderCreated and PaymentSucceeded audit documents through the real
+Spring Data Mongo repositories, proves duplicate audit event handling converges
+to one document, verifies searchable metadata query methods, and inspects raw
+BSON to confirm the complete structured nested payload survives a real Mongo
+round trip. Notification ledger coverage now proves real Mongo uniqueness,
+replay recovery for a missing channel, failed and interrupted channel records
+being returned to `PENDING`, and completed email/push `SENT` records not being
+duplicated. `docs/integration-tests.md` now records the dedicated Mongo
+coverage. Validation passed: `scripts/project-validate.sh audit-notification-test`
+on Java 21 and, after an initial sandboxed Docker-socket failure,
+`scripts/project-validate.sh integration-test` with Docker access on Java 21.
+Next task: ECOM-044.
+
+ECOM-042 is complete. Payment, Order and Audit Notification now have real Kafka
+Testcontainers coverage through Spring Kafka listener containers instead of
+direct listener-method calls. Payment verifies the `OrderCreated` consumer with
+isolated Kafka topics/groups/DLTs and PostgreSQL persistence, covering a valid
+event, duplicate replay idempotency, persisted payment/outbox/processed-event
+state and bounded malformed-message DLT routing. Order verifies the
+payment-result consumer with isolated Kafka and PostgreSQL, covering order
+status/history updates, processed-event idempotency and poison-message DLT
+routing. Audit Notification verifies both order-created and payment-result
+audit consumers with isolated Kafka and MongoDB, covering audit document
+persistence, notification delivery ledger records, duplicate replay behavior
+and separate DLT routing for malformed order/payment payloads. Service-local
+test dependencies now include the needed Testcontainers Kafka support and
+Audit MongoDB support, and `docs/integration-tests.md` documents the Kafka
+coverage and direct service-slice command. Validation passed:
+`scripts/project-validate.sh integration-test` on Java 21 with Docker access.
+An initial sandboxed validation attempt was blocked by Docker socket
+permissions before the approved Docker-access run passed. Next task: ECOM-043.
+
+ECOM-041 is complete. Catalog Service now has Redis Testcontainers coverage for
+the existing product-detail cache and Redisson miss-lock path. The new
+`CatalogRedisCacheIT` suite starts an isolated Redis 7 container with dynamic
+`spring.data.redis.*` endpoints, keeps the default unit loop untouched, and
+uses the existing Catalog cache configuration instead of localhost or fixed
+ports. It verifies product-detail JSON serialization without Java type metadata,
+Redis TTL writes, cache-aside miss population, cached reads after an
+authoritative database-only change, admin product update invalidation and
+repopulation, plus a bounded two-request concurrent miss that proves the
+Redisson product lock is held and only one protected database load occurs.
+Catalog now declares the core Testcontainers test dependency directly for the
+Redis `GenericContainer`, and `docs/integration-tests.md` documents the Redis
+coverage alongside the PostgreSQL suites. This resume made no additional
+source changes: the sandboxed validation attempt was blocked by Docker socket
+permissions, then the approved Docker-access
+`scripts/project-validate.sh integration-test` run passed on Java 21 with the
+Catalog Redis suite reporting 3/3 tests. `git diff --check` also passed. Next
+task: ECOM-042.
+
+ECOM-040 is complete. The root Maven parent now pins
+Testcontainers 1.20.4 through the Testcontainers BOM, adds an opt-in
+`integration-tests` profile that skips Surefire unit execution and runs
+Failsafe `*IT` suites, and Catalog, Order and Payment now have service-local
+PostgreSQL Testcontainers dependencies and `*PostgreSqlIT` suites. The suites
+start isolated PostgreSQL databases with dynamic Testcontainers endpoints,
+wire datasource properties through `@DynamicPropertySource`, and cover Flyway
+migrations, owned schema tables, repository persistence, database constraints
+and representative outbox/idempotency JSON persistence flows without touching
+developer Compose volumes. Documentation now records the opt-in commands and
+Docker prerequisite/failure behavior in `docs/integration-tests.md`, with links
+from the README and developer setup guide. After Docker Desktop was started,
+`scripts/project-validate.sh integration-test` passed on Java 21 against three
+isolated PostgreSQL 16 containers for Catalog, Order and Payment. The suites
+confirmed Flyway migrations, owned schema tables, repository persistence,
+database constraints, outbox JSON and idempotent processed-event behavior.
+ECOM-041 followed this task.
 
 ECOM-039 is complete. Audit Notification Service now exposes a bounded
 Micrometer gauge, `ecommerce.kafka.dead.letter.topic.depth`, for the fixed
@@ -657,7 +975,14 @@ Night run target:
    replay-safe notification routing/delivery ledger creation, local mock
    email and push delivery, and end-to-end REST/Kafka trace and correlation
    propagation, bounded operational metrics, local Prometheus alert rules and
-   fixed-topic DLT depth signals. Next queued task: none.
+   fixed-topic DLT depth signals.
+6. Sprint 6 is complete through ECOM-052, covering the opt-in Testcontainers
+   profile, PostgreSQL/Redis/Kafka/MongoDB integration coverage, Java 21
+   application container images, full Compose application service wiring,
+   deterministic local mock payment-provider container, Debezium connector
+   bootstrap, contract and authenticated E2E coverage, bounded load and
+   resilience validation, OpenAPI publication and architecture/data/demo
+   documentation, CI automation and a passing local release-readiness gate.
 
 Sprint 5 execution order so far:
 
@@ -691,11 +1016,9 @@ Completed Sprint 3 execution order:
 - Debezium CDC routing to `ecommerce.order.events`.
 - Customer-owned and operations order query/history APIs.
 
-Excluded from this Sprint 5 run:
+Still excluded from completed work:
 
 - Real email, SMTP, push device-provider integrations or credentials.
-- Broad E2E/Testcontainers work.
-- CI release pipeline.
 
 ## Environment Notes
 
@@ -708,6 +1031,48 @@ Excluded from this Sprint 5 run:
   long overnight work because it improves rollback and changed-file tracking.
 
 ## Latest Validation
+
+ECOM-052 validation status:
+
+```bash
+bash -n scripts/project-validate.sh
+scripts/project-validate.sh ci-config
+scripts/project-validate.sh integration-test
+scripts/project-validate.sh compose-image-build
+scripts/project-validate.sh release-check
+```
+
+All commands passed. The final release check stops project Compose services
+before Testcontainers to fit the integration stack within local Docker Desktop
+memory without deleting containers, volumes or application data. Compose image
+builds use `COMPOSE_BAKE=false` by default to avoid a Buildx session-header
+failure caused by the non-ASCII checkout path on macOS.
+
+ECOM-051 validation passed:
+
+```bash
+scripts/project-validate.sh docs-check
+git diff --check -- README.md DESIGN.md infra/README.md docs/architecture.md docs/data-model.md docs/demo-runbook.md docs/observability-runbook.md docs/service-rbac.md docs/developer-setup.md docs/night-runner/task-queue.md STATE.md docs/night-runner/handoff.md
+```
+
+ECOM-044 validation passed:
+
+```bash
+scripts/project-validate.sh full-stack-config
+git diff --check
+```
+
+ECOM-041 validation passed:
+
+```bash
+scripts/project-validate.sh integration-test
+git diff --check
+```
+
+The required integration validation passed on Java 21 with Docker/Testcontainers
+against the existing PostgreSQL suites and the new Catalog Redis suite. A first
+sandboxed attempt failed only because Docker socket access was blocked; the
+approved Docker-access run completed successfully.
 
 ECOM-039 validation passed:
 
@@ -843,17 +1208,5 @@ scripts/night-agent-runner.sh --agent codex --overnight --phase sprint3 --max-mi
 
 ## Next Command
 
-No task is queued after ECOM-039 in the current Sprint 5 task queue. When a new
-task is added, dry-run the runner with:
-
-```bash
-scripts/night-agent-runner.sh --agent codex --overnight --phase sprint5 --max-minutes 28800 --dry-run
-```
-
-Start the overnight Sprint 5 runner from the repo root with:
-
-```bash
-caffeinate -dimsu scripts/night-agent-runner.sh --agent codex --overnight --phase sprint5 --max-minutes 28800
-```
-
-Next task: none queued.
+No queued implementation task remains. Review and commit the completed Sprint
+6 changes; the night runner should report no pending `sprint6` tasks.

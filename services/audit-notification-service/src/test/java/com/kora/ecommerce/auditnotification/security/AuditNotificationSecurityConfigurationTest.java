@@ -7,10 +7,13 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import com.kora.ecommerce.auditnotification.notification.NotificationDeliveryRepository;
+import com.kora.ecommerce.auditnotification.persistence.AuditEventRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -32,9 +35,21 @@ class AuditNotificationSecurityConfigurationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @MockBean
+    private AuditEventRepository auditEventRepository;
+
+    @MockBean
+    private NotificationDeliveryRepository notificationDeliveryRepository;
+
     @Test
     void actuatorHealthIsPublic() throws Exception {
         mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void openApiJsonIsPublic() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk());
     }
 

@@ -26,6 +26,26 @@ need_dir() {
   fi
 }
 
+need_grep() {
+  local pattern="$1"
+  local file="$2"
+  local message="$3"
+  if ! grep -Eq "$pattern" "$file"; then
+    echo "$message" >&2
+    exit 2
+  fi
+}
+
+reject_grep() {
+  local pattern="$1"
+  local file="$2"
+  local message="$3"
+  if grep -Eq "$pattern" "$file"; then
+    echo "$message" >&2
+    exit 2
+  fi
+}
+
 java_major() {
   local version
   version="$(java -version 2>&1 | awk -F '"' '/version/ {print $2; exit}' || true)"
@@ -43,6 +63,34 @@ mvn_cmd() {
     echo "Maven is not available on PATH." >&2
     exit 2
   fi
+}
+
+run_bounded() {
+  local duration="$1"
+  shift
+  if ! command -v timeout >/dev/null 2>&1; then
+    echo "The timeout command is required for bounded release validation." >&2
+    exit 2
+  fi
+  timeout "$duration" "$@"
+}
+
+prepare_release_docker() {
+  local running_services
+
+  if [ "${RELEASE_CHECK_STOP_COMPOSE:-1}" = "0" ]; then
+    echo "Keeping the project Compose stack running because RELEASE_CHECK_STOP_COMPOSE=0."
+    return 0
+  fi
+
+  running_services="$(docker compose ps --status running -q 2>/dev/null || true)"
+  if [ -z "$running_services" ]; then
+    return 0
+  fi
+
+  echo "Stopping project Compose services before Testcontainers validation to free local Docker resources."
+  echo "Containers, volumes and application data will be preserved."
+  run_bounded 5m docker compose stop
 }
 
 case "$MODE" in
@@ -286,19 +334,42 @@ case "$MODE" in
     done
     ;;
   ci-config)
-    need_file .github/workflows/ci.yml
-    if ! grep -Eq "java-version:[[:space:]]*['\"]?21" .github/workflows/ci.yml; then
-      echo "CI does not select Java 21." >&2
-      exit 2
-    fi
-    if ! grep -Eq '(mvn|mvnw).*(test|verify)' .github/workflows/ci.yml; then
-      echo "CI does not run Maven tests or verification." >&2
-      exit 2
-    fi
-    if ! grep -Eq 'docker compose config' .github/workflows/ci.yml; then
-      echo "CI does not validate Docker Compose configuration." >&2
-      exit 2
-    fi
+    workflow=.github/workflows/ci.yml
+    need_file "$workflow"
+    need_grep "permissions:" "$workflow" "CI does not declare workflow permissions."
+    need_grep "contents:[[:space:]]*read" "$workflow" "CI does not use read-only contents permission."
+    need_grep "concurrency:" "$workflow" "CI does not configure concurrency cancellation."
+    need_grep "cancel-in-progress:[[:space:]]*true" "$workflow" "CI does not cancel superseded runs."
+    need_grep "actions/checkout@v4" "$workflow" "CI does not pin checkout to a major action version."
+    need_grep "persist-credentials:[[:space:]]*false" "$workflow" "CI checkout keeps write credentials available."
+    need_grep "actions/setup-java@v4" "$workflow" "CI does not pin setup-java to a major action version."
+    need_grep "java-version:[[:space:]]*['\"]?21['\"]?" "$workflow" "CI does not select Java 21."
+    need_grep "cache:[[:space:]]*maven" "$workflow" "CI does not enable safe Maven dependency caching."
+    need_grep "timeout-minutes:" "$workflow" "CI jobs do not define bounded timeouts."
+    need_grep "scripts/project-validate\.sh[[:space:]]+api-docs-test" "$workflow" "CI does not run the unit/OpenAPI test suite."
+    need_grep "scripts/project-validate\.sh[[:space:]]+contract-test" "$workflow" "CI does not run the event contract suite."
+    need_grep "scripts/project-validate\.sh[[:space:]]+integration-test" "$workflow" "CI does not run the opt-in integration suite."
+    need_grep "docker compose config" "$workflow" "CI does not validate Docker Compose configuration."
+    need_grep "(docker compose build|scripts/project-validate\.sh[[:space:]]+compose-image-build)" "$workflow" "CI does not validate local image builds."
+    need_grep "scripts/project-validate\.sh[[:space:]]+(full-stack-smoke|e2e-test)" "$workflow" "CI does not run bounded Docker smoke coverage."
+    need_grep "actions/upload-artifact@v4" "$workflow" "CI does not upload diagnostics on failure."
+    need_grep "if:[[:space:]]*failure\(\)" "$workflow" "CI diagnostics are not guarded by a failure condition."
+    reject_grep "pull_request_target" "$workflow" "CI must not use pull_request_target."
+    reject_grep "secrets\." "$workflow" "CI must not reference repository secrets."
+    reject_grep "(docker[[:space:]]+login|docker[[:space:]]+push|gh[[:space:]]+release|git[[:space:]]+push|git[[:space:]]+tag)" "$workflow" "CI must not publish images, releases, tags or pushes."
+    ;;
+  compose-image-build)
+    "$0" full-stack-config
+    # Compose Bake can put the non-ASCII checkout path into a Buildx session
+    # header on macOS. The regular Compose builder avoids that transport bug.
+    run_bounded 30m env COMPOSE_BAKE="${COMPOSE_BAKE:-false}" docker compose build \
+      gateway-service \
+      catalog-service \
+      order-service \
+      payment-service \
+      audit-notification-service \
+      mock-payment-provider \
+      debezium-connector-bootstrap
     ;;
   night-runner-config)
     need_file docs/night-runner/sprint6-context-pack.md
@@ -311,19 +382,24 @@ case "$MODE" in
     bash -n scripts/night-agent-runner.sh
     bash -n scripts/night-agent-safe-approve.sh
     bash -n scripts/night-agent-status.sh
-    if ! grep -Eq 'task:id=ECOM-040 phase=sprint6 status=pending' docs/night-runner/task-queue.md; then
-      echo "Sprint 6 first task is not pending in the queue." >&2
+    if ! grep -Eq 'task:id=ECOM-040 phase=sprint6 status=(pending|in_progress|done|blocked)' docs/night-runner/task-queue.md; then
+      echo "Sprint 6 first task is missing or has an invalid status." >&2
       exit 2
     fi
-    scripts/night-agent-prompt-builder.sh ECOM-040 >/dev/null
+    scripts/night-agent-status.sh >/dev/null
     ;;
   release-check)
+    "$0" java21
     "$0" structure
-    "$0" compose-config
-    "$0" full-stack-config
     "$0" docs-check
     "$0" ci-config
-    mvn_cmd -q test
+    "$0" compose-config
+    "$0" full-stack-config
+    run_bounded 20m "$0" api-docs-test
+    run_bounded 15m "$0" contract-test
+    prepare_release_docker
+    run_bounded 30m "$0" integration-test
+    run_bounded 30m "$0" compose-image-build
     ;;
   *)
     echo "Unknown validation mode: $MODE" >&2

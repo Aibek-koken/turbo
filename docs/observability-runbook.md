@@ -228,9 +228,13 @@ docker compose up -d postgres kafka debezium-connect mongodb jaeger keycloak pro
 ./scripts/register-payment-outbox-connector.sh
 ```
 
+The default full-stack Compose graph also runs the idempotent
+`debezium-connector-bootstrap` service, so manual registration is only needed
+when you start a partial stack.
+
 3. Create an order through the gateway with a known correlation ID. Use a local
-   customer JWT for `CUSTOMER_TOKEN` and a valid catalog product ID from the
-   seeded/local catalog data:
+   customer JWT for `CUSTOMER_TOKEN` and a valid active Catalog product ID from
+   local demo or E2E fixture data:
 
 ```bash
 export CORRELATION_ID=purchase-local-001
@@ -239,7 +243,7 @@ curl -i \
   -H "Content-Type: application/json" \
   -H "X-Correlation-Id: $CORRELATION_ID" \
   -d '{"items":[{"productId":"00000000-0000-0000-0000-000000000001","quantity":1}]}' \
-  http://localhost:8080/api/orders
+  http://localhost:8080/api/orders/customer/orders
 ```
 
 4. Confirm the gateway response returns the same `X-Correlation-Id`, then

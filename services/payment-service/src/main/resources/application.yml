@@ -35,6 +35,12 @@ spring:
           issuer-uri: ${ECOMMERCE_SECURITY_ISSUER_URI:http://localhost:8085/realms/ecommerce}
           jwk-set-uri: ${ECOMMERCE_SECURITY_JWK_SET_URI:http://localhost:8085/realms/ecommerce/protocol/openid-connect/certs}
 
+springdoc:
+  paths-to-match:
+    - /api/payments/**
+  swagger-ui:
+    path: /swagger-ui.html
+
 server:
   port: 8083
 

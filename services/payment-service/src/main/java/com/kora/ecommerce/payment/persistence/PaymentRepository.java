@@ -9,5 +9,7 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
     Optional<Payment> findByOrderId(UUID orderId);
 
+    Optional<Payment> findByOrderIdAndCustomerId(UUID orderId, String customerId);
+
     boolean existsByOrderId(UUID orderId);
 }

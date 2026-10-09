@@ -59,10 +59,10 @@ Validation:
 - `scripts/project-validate.sh structure`
 <!-- /task -->
 
-<!-- task:id=ECOM-040 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-040 phase=sprint6 status=done -->
 ## ECOM-040: Add Testcontainers foundation and PostgreSQL integration suites
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-26 Integration Tests with Testcontainers
@@ -89,10 +89,10 @@ Validation:
 - `scripts/project-validate.sh integration-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-041 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-041 phase=sprint6 status=done -->
 ## ECOM-041: Verify Redis cache and lock behavior with Testcontainers
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-26 Integration Tests with Testcontainers
@@ -116,10 +116,10 @@ Validation:
 - `scripts/project-validate.sh integration-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-042 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-042 phase=sprint6 status=done -->
 ## ECOM-042: Verify Kafka event processing with Testcontainers
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-26 Integration Tests with Testcontainers
@@ -145,10 +145,10 @@ Validation:
 - `scripts/project-validate.sh integration-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-043 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-043 phase=sprint6 status=done -->
 ## ECOM-043: Verify Mongo audit and notification persistence with Testcontainers
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-26 Integration Tests with Testcontainers
@@ -172,10 +172,10 @@ Validation:
 - `scripts/project-validate.sh integration-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-044 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-044 phase=sprint6 status=done -->
 ## ECOM-044: Containerize application services and the mock payment provider
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-29 One-Command Full Environment
@@ -204,10 +204,10 @@ Validation:
 - `scripts/project-validate.sh full-stack-config`
 <!-- /task -->
 
-<!-- task:id=ECOM-045 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-045 phase=sprint6 status=done -->
 ## ECOM-045: Complete one-command startup and full-stack smoke validation
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-29 One-Command Full Environment
@@ -236,10 +236,10 @@ Validation:
 - `scripts/project-validate.sh full-stack-smoke`
 <!-- /task -->
 
-<!-- task:id=ECOM-046 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-046 phase=sprint6 status=done -->
 ## ECOM-046: Add producer-consumer event contract tests
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-27 Contract & Full End-to-End Tests
@@ -267,10 +267,10 @@ Validation:
 - `scripts/project-validate.sh contract-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-047 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-047 phase=sprint6 status=done -->
 ## ECOM-047: Add authenticated purchase-flow end-to-end tests
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-27 Contract & Full End-to-End Tests
@@ -299,10 +299,10 @@ Validation:
 - `scripts/project-validate.sh e2e-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-048 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-048 phase=sprint6 status=done -->
 ## ECOM-048: Add bounded load and cache-effect validation
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-28 Load & Resilience Validation
@@ -326,10 +326,10 @@ Validation:
 - `scripts/project-validate.sh load-smoke`
 <!-- /task -->
 
-<!-- task:id=ECOM-049 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-049 phase=sprint6 status=done -->
 ## ECOM-049: Add restart and replay resilience validation
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-28 Load & Resilience Validation
@@ -354,10 +354,10 @@ Validation:
 - `scripts/project-validate.sh resilience-smoke`
 <!-- /task -->
 
-<!-- task:id=ECOM-050 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-050 phase=sprint6 status=done -->
 ## ECOM-050: Publish OpenAPI documentation for external APIs
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-30 API, Architecture Documentation & CI Release
@@ -385,10 +385,10 @@ Validation:
 - `scripts/project-validate.sh api-docs-test`
 <!-- /task -->
 
-<!-- task:id=ECOM-051 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-051 phase=sprint6 status=done -->
 ## ECOM-051: Complete architecture, ERD, setup and demo documentation
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-30 API, Architecture Documentation & CI Release
@@ -413,10 +413,10 @@ Validation:
 - `scripts/project-validate.sh docs-check`
 <!-- /task -->
 
-<!-- task:id=ECOM-052 phase=sprint6 status=pending -->
+<!-- task:id=ECOM-052 phase=sprint6 status=done -->
 ## ECOM-052: Add CI pipeline and final release-readiness checks
 
-Status: pending
+Status: done
 
 Story coverage:
 - US-30 API, Architecture Documentation & CI Release

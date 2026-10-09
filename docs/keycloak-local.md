@@ -19,6 +19,10 @@ No test users, passwords, client secrets or generated tokens are checked in.
 Create local users in the Keycloak admin console and assign one or more realm
 roles when you need a token for manual testing.
 
+The E2E runner creates isolated local-only users through the Keycloak admin API,
+assigns the required realm roles, obtains short-lived tokens and deletes only
+those generated users by default. It does not commit test passwords or tokens.
+
 ## Placeholder Token Request
 
 Use placeholders for local-only credentials:

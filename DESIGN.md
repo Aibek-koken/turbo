@@ -1,7 +1,7 @@
 # Design Baseline
 
 This is the compact architecture baseline for the e-commerce microservices
-project. It keeps future agent sessions from re-reading the PDF every time.
+project. It keeps agent sessions from re-reading the PDF every time.
 
 ## Source Scope
 
@@ -90,7 +90,7 @@ Initial events:
 
 ## Implementation Order
 
-1. Repository and service skeleton.
+1. Repository and service modules.
 2. Local infrastructure compose.
 3. Keycloak realm, clients and roles.
 4. Gateway routes and JWT validation.
@@ -133,3 +133,13 @@ Initial events:
 The current machine reports Java 17, while the project requires Java 21. Agents
 must keep Java 21 as the target. If compile/test validation fails only because
 Java 21 is unavailable, record that clearly in `STATE.md` and the handoff.
+
+## Detailed Documentation
+
+- [Architecture](docs/architecture.md) describes service/data ownership,
+  synchronous calls, outbox/CDC paths, Kafka consumers, observability and
+  security boundaries.
+- [Data model](docs/data-model.md) documents the Catalog, Order, Payment and
+  Audit Notification persistence models.
+- [Demo runbook](docs/demo-runbook.md) walks through the authenticated happy
+  path, payment-failure path and expected operational evidence.

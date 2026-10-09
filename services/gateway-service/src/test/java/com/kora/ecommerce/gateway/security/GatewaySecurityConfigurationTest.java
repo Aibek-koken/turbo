@@ -6,14 +6,16 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import reactor.core.publisher.Mono;
 
 @AutoConfigureWebTestClient
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@Import(GatewaySecurityConfigurationTest.RejectingJwtDecoderConfiguration.class)
 class GatewaySecurityConfigurationTest {
 
     @Autowired
@@ -49,7 +51,7 @@ class GatewaySecurityConfigurationTest {
 
         @Bean
         ReactiveJwtDecoder reactiveJwtDecoder() {
-            return token -> Mono.error(new JwtException("Test decoder rejects all bearer tokens."));
+            return token -> Mono.error(new BadJwtException("Test decoder rejects all bearer tokens."));
         }
     }
 }

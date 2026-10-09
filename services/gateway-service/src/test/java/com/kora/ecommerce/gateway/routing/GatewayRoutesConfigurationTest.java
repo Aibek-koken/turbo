@@ -2,47 +2,61 @@ package com.kora.ecommerce.gateway.routing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Duration;
-import java.util.Map;
+import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.gateway.route.RouteDefinition;
-import org.springframework.cloud.gateway.route.RouteDefinitionLocator;
+import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
+import org.springframework.core.io.ClassPathResource;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class GatewayRoutesConfigurationTest {
-
-    @Autowired
-    private RouteDefinitionLocator routeDefinitionLocator;
 
     @Test
     void routesCoverDownstreamServicesWithLocalDefaults() {
-        Map<String, RouteDefinition> routes = routeDefinitionLocator.getRouteDefinitions()
-                .collectMap(RouteDefinition::getId)
-                .block(Duration.ofSeconds(5));
+        Properties properties = gatewayApplicationProperties();
 
-        assertThat(routes).isNotNull();
-        assertThat(routes).containsOnlyKeys(
+        assertRoute(
+                properties,
+                0,
                 "catalog-service",
+                "${ECOMMERCE_CATALOG_SERVICE_URI:http://localhost:8081}",
+                "Path=/api/catalog/**");
+        assertRoute(
+                properties,
+                1,
                 "order-service",
+                "${ECOMMERCE_ORDER_SERVICE_URI:http://localhost:8082}",
+                "Path=/api/orders/**");
+        assertRoute(
+                properties,
+                2,
                 "payment-service",
-                "audit-notification-service");
-
-        assertRoute(routes.get("catalog-service"), "http://localhost:8081", "/api/catalog/**");
-        assertRoute(routes.get("order-service"), "http://localhost:8082", "/api/orders/**");
-        assertRoute(routes.get("payment-service"), "http://localhost:8083", "/api/payments/**");
-        assertRoute(routes.get("audit-notification-service"), "http://localhost:8084", "/api/audit-notifications/**");
+                "${ECOMMERCE_PAYMENT_SERVICE_URI:http://localhost:8083}",
+                "Path=/api/payments/**");
+        assertRoute(
+                properties,
+                3,
+                "audit-notification-service",
+                "${ECOMMERCE_AUDIT_NOTIFICATION_SERVICE_URI:http://localhost:8084}",
+                "Path=/api/audit-notifications/**");
     }
 
-    private static void assertRoute(RouteDefinition route, String uri, String pathPattern) {
-        assertThat(route).isNotNull();
-        assertThat(route.getUri()).hasToString(uri);
-        assertThat(route.getPredicates())
-                .anySatisfy(predicate -> {
-                    assertThat(predicate.getName()).isEqualTo("Path");
-                    assertThat(predicate.getArgs()).containsValue(pathPattern);
-                });
+    private static Properties gatewayApplicationProperties() {
+        YamlPropertiesFactoryBean yaml = new YamlPropertiesFactoryBean();
+        yaml.setResources(new ClassPathResource("application.yml"));
+        Properties properties = yaml.getObject();
+        assertThat(properties).isNotNull();
+        return properties;
+    }
+
+    private static void assertRoute(
+            Properties properties,
+            int index,
+            String id,
+            String uri,
+            String pathPredicate) {
+        String prefix = "spring.cloud.gateway.routes[" + index + "]";
+        assertThat(properties.getProperty(prefix + ".id")).isEqualTo(id);
+        assertThat(properties.getProperty(prefix + ".uri")).isEqualTo(uri);
+        assertThat(properties.getProperty(prefix + ".predicates[0]")).isEqualTo(pathPredicate);
     }
 }

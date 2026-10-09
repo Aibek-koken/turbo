@@ -31,6 +31,12 @@ public class AuditNotificationSecurityConfiguration {
                                 "/actuator/info",
                                 "/actuator/prometheus")
                         .permitAll()
+                        .requestMatchers(
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**")
+                        .permitAll()
                         .requestMatchers("/api/audit-notifications/customer/**")
                         .hasAnyRole(CUSTOMER, OPS_ADMIN)
                         .requestMatchers("/api/audit-notifications/ops/**")

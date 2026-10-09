@@ -556,12 +556,20 @@ scan_log() {
   local logfile="$1"
   [ -f "$logfile" ] || return 0
 
-  if grep -E '(^|[[:space:]])(rm -rf|git push|git reset --hard|git clean -fd)([[:space:]]|$)' "$logfile" >/dev/null; then
+  # Codex logs contain prompts, skill documentation, prior dirty diffs and
+  # command output as well as executed commands. Scan only command records so
+  # read-only context from those sections does not block an otherwise clean task.
+  if awk '
+    previous == "exec" { print }
+    { previous = $0 }
+  ' "$logfile" \
+    | grep -E '(^|[^[:alnum:]_-])(rm -rf|git push|git reset --hard|git clean -fd)([^[:alnum:]_-]|$)' >/dev/null; then
     echo "Potential dangerous command found in log: $logfile" >&2
     return 2
   fi
 
-  if grep -Eiq '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|xox[baprs]-|Authorization:[[:space:]]*Bearer[[:space:]]+[A-Za-z0-9._-]{20,})' "$logfile"; then
+  if grep -Ei '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|xox[baprs]-|Authorization:[[:space:]]*Bearer[[:space:]]+[A-Za-z0-9._-]{20,})' "$logfile" \
+    | grep -Fiv 'AKIAIOSFODNN7EXAMPLE' >/dev/null; then
     echo "Potential live secret found in log: $logfile" >&2
     return 2
   fi

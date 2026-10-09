@@ -1,0 +1,39 @@
+services:
+  kafka:
+    environment:
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx320m
+
+  debezium-connect:
+    environment:
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx384m
+
+  mongodb:
+    command:
+      - mongod
+      - --wiredTigerCacheSizeGB
+      - "0.25"
+      - --bind_ip_all
+
+  keycloak:
+    environment:
+      JAVA_OPTS_KC_HEAP: -Xms64m -Xmx256m
+
+  catalog-service:
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx192m -XX:MaxMetaspaceSize=160m -XX:MaxDirectMemorySize=64m -Xss256k
+
+  order-service:
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx192m -XX:MaxMetaspaceSize=160m -XX:MaxDirectMemorySize=64m -Xss256k
+
+  payment-service:
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx192m -XX:MaxMetaspaceSize=160m -XX:MaxDirectMemorySize=64m -Xss256k
+
+  audit-notification-service:
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx192m -XX:MaxMetaspaceSize=160m -XX:MaxDirectMemorySize=64m -Xss256k
+
+  gateway-service:
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx192m -XX:MaxMetaspaceSize=160m -XX:MaxDirectMemorySize=64m -Xss256k
